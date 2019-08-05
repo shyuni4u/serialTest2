@@ -10,6 +10,7 @@ class CategoryFragmentAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
     private val list: ArrayList<CategoryFragment> = ArrayList()
 
     init {
+        list.clear()
         for (lastPicture in g_lasts) {
             list.add(CategoryFragment(lastPicture))
         }
@@ -21,6 +22,10 @@ class CategoryFragmentAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
 
     override fun getCount(): Int {
         return list.size
+    }
+
+    override fun getItemPosition(`object`: Any): Int {
+        return POSITION_NONE
     }
 
 }

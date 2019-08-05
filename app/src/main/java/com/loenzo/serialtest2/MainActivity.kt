@@ -41,7 +41,6 @@ class MainActivity : AppCompatActivity() {
 
         getUsePermission(this)
         initCategory(this)
-        makePagerView(this)
         //makeRecyclerView(this)
     }
     private fun getUsePermission(context: Context) {
@@ -111,10 +110,14 @@ class MainActivity : AppCompatActivity() {
 
             }
         }
+        makePagerView()
     }
 
-    private fun makePagerView(context: Context) {
+    fun makePagerView(moveLast: Boolean = false) {
         lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager)
+        if (moveLast) {
+            lastImages.currentItem = lasts.size
+        }
     }
 
     private fun makeRecyclerView(context: Context) {

@@ -11,6 +11,8 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.viewpager.widget.ViewPager
+import kotlinx.android.synthetic.main.content_main.*
 
 class CategoryFragment(private val _category: LastPicture) : Fragment () {
 
@@ -42,6 +44,7 @@ class CategoryFragment(private val _category: LastPicture) : Fragment () {
                     MainActivity.lasts.add(LastPicture("@@EMPTY@@", newName))
                 }
                 (context as MainActivity).makeCategoryFolder(newName)
+                (context as MainActivity).makePagerView(true)
             } }
             builder.setNegativeButton(resources.getString(R.string.cancel)
             ) { _, _ -> run {} }
