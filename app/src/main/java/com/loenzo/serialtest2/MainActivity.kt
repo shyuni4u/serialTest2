@@ -1,11 +1,6 @@
 package com.loenzo.serialtest2
 
-import android.annotation.TargetApi
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
@@ -16,7 +11,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import kotlinx.android.synthetic.main.content_main.*
 import java.io.File
 import java.util.concurrent.locks.ReentrantLock
@@ -150,16 +144,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun makeRecyclerView(context: Context) {
-        //recyclerView.layoutManager = LinearLayoutManager(context, OrientationHelper.HORIZONTAL, false)
-        //recyclerView.adapter = PostsAdapter(categories)
-    }
-
-    private fun pickImageFromGallery() {
-        //Intent to pick image
-        val intent = Intent(Intent.ACTION_PICK)
-        intent.type = "image/*"
-        startActivityForResult(intent, IMAGE_PICK_CODE)
+    fun openCamera() {
+        Log.i("CAMERA", "TEST")
     }
 
     fun makeCategoryFolder(strCategoryName: String) {
@@ -177,7 +163,6 @@ class MainActivity : AppCompatActivity() {
         if (!f.exists()) {
             f.mkdirs()
         }
-        startActivityForResult(intent, MAKE_FOLDER_CODE)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -194,17 +179,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-/*
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (resultCode == Activity.RESULT_OK && requestCode == IMAGE_PICK_CODE) {
-            //lastImage.setImageURI(data?.data)
-            Log.i(APP_NAME, "IMAGE_PICK_CODE")
-        }
 
-        if (resultCode == Activity.RESULT_OK && requestCode == MAKE_FOLDER_CODE) {
-            Log.i(APP_NAME, "MAKE_FOLDER_CODE")
-        }
-    }
-*/
 }
 
+/**
+private fun makeRecyclerView(context: Context) {
+    //recyclerView.layoutManager = LinearLayoutManager(context, OrientationHelper.HORIZONTAL, false)
+    //recyclerView.adapter = PostsAdapter(categories)
+}
+
+private fun pickImageFromGallery() {
+    //Intent to pick image
+    val intent = Intent(Intent.ACTION_PICK)
+    intent.type = "image/*"
+}
+*/
