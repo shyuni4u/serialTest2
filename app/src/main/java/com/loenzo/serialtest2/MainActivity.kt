@@ -1,8 +1,11 @@
 package com.loenzo.serialtest2
 
+import android.annotation.TargetApi
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
@@ -13,8 +16,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import kotlinx.android.synthetic.main.content_main.*
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
 import android.Manifest.permission as _permission
 
 class MainActivity : AppCompatActivity() {
@@ -23,13 +28,20 @@ class MainActivity : AppCompatActivity() {
         private const val APP_NAME = "MEMORIA"
 
         // image pick code
-        private const val IMAGE_PICK_CODE = 1000
+        private const val IMAGE_PICK_CODE = 1001
 
         //  make folder code
-        private const val MAKE_FOLDER_CODE = 1001
+        private const val MAKE_FOLDER_CODE = 1002
 
         // Permission code
-        private const val PERMISSION_CODE = 1002
+        private const val PERMISSION_CODE = 1000
+
+        private val permissionsRequired = arrayOf(
+            _permission.WRITE_EXTERNAL_STORAGE,
+            _permission.READ_EXTERNAL_STORAGE,
+            _permission.CAMERA)
+
+        private val sharedPermissionLock = ReentrantLock()
 
         var lasts: ArrayList<LastPicture> = ArrayList()
         var categories: ArrayList<String> = ArrayList()
@@ -40,23 +52,40 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.content_main)
 
         getUsePermission(this)
-        initCategory(this)
-        //makeRecyclerView(this)
+
+        if (checkPermissions().isEmpty()) {
+            initCategory(this)
+        }
     }
+
     private fun getUsePermission(context: Context) {
         // check runtime permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(_permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            // check external storage
+            val requests = checkPermissions()
+            if (requests.isNotEmpty()) {
                 //permission denied
-                val permissions = arrayOf(_permission.WRITE_EXTERNAL_STORAGE)
                 //show popup to request runtime permission
-                requestPermissions(permissions, PERMISSION_CODE)
+                val arr = arrayOfNulls<String>(requests.size)
+                requestPermissions(requests.toArray(arr), PERMISSION_CODE)
             } else {
                 //permission already granted
             }
         } else {
             //permission already granted
         }
+    }
+
+    private fun checkPermissions() : ArrayList<String> {
+        val requests : ArrayList<String> = ArrayList()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            for (permission in permissionsRequired) {
+                if (checkSelfPermission(permission) == PackageManager.PERMISSION_DENIED) {
+                    requests.add(permission)
+                }
+            }
+        }
+        return requests
     }
 
     private fun initCategory(context: Context) {
@@ -77,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         categories.clear()
         lasts.clear()
 
+        //  load folder list
         for (file in listFiles) {
             if (file.isDirectory) {
                 val selection = "bucket_display_name=?"
@@ -156,6 +186,7 @@ class MainActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //permission from popup granted
                     //pickImageFromGallery()
+                    initCategory(this)
                 } else {
                     //permission from popup denied
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
@@ -163,7 +194,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
+/*
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && requestCode == IMAGE_PICK_CODE) {
             //lastImage.setImageURI(data?.data)
@@ -174,11 +205,6 @@ class MainActivity : AppCompatActivity() {
             Log.i(APP_NAME, "MAKE_FOLDER_CODE")
         }
     }
-
-}
-
-/*
-https://recipes4dev.tistory.com/148
-https://coding-factory.tistory.com/206
 */
+}
 
