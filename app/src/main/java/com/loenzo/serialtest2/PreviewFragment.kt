@@ -12,14 +12,10 @@ import android.view.*
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.fragment_preview.*
-import java.io.Serializable
 import java.lang.IllegalArgumentException
-import java.util.*
 
 class PreviewFragment : Fragment() {
 
-    private val MAX_PREVIEW_WIDTH = 1280
-    private val MAX_PREVIEW_HEIGHT = 720
     private lateinit var captureSession: CameraCaptureSession
     private lateinit var captureRequestBuilder: CaptureRequest.Builder
 
@@ -27,10 +23,8 @@ class PreviewFragment : Fragment() {
     private val deviceStateCallback = object: CameraDevice.StateCallback() {
         override fun onOpened(camera: CameraDevice) {
             Log.d(TAG, "camera device opened")
-            if (camera != null) {
-                cameraDevice = camera
-                previewSesstion()
-            }
+            cameraDevice = camera
+            previewSesstion()
         }
 
         override fun onDisconnected(camera: CameraDevice) {
@@ -53,24 +47,22 @@ class PreviewFragment : Fragment() {
 
     private fun previewSesstion() {
         val surfaceTexture = previewTextureView.surfaceTexture
-        surfaceTexture.setDefaultBufferSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)
+        surfaceTexture.setDefaultBufferSize(MAX_WIDTH, MAX_HEIGHT)
         val surface = Surface(surfaceTexture)
 
         captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
         captureRequestBuilder.addTarget(surface)
 
-        cameraDevice.createCaptureSession(Arrays.asList(surface),
+        cameraDevice.createCaptureSession(listOf(surface),
             object: CameraCaptureSession.StateCallback() {
                 override fun onConfigureFailed(session: CameraCaptureSession) {
                     Log.e(TAG, "creating capture session failed!")
                 }
 
                 override fun onConfigured(session: CameraCaptureSession) {
-                    if (session != null) {
-                        captureSession = session
-                        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                        captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null)
-                    }
+                    captureSession = session
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null)
                 }
 
             }, null)
@@ -130,13 +122,16 @@ class PreviewFragment : Fragment() {
 
     companion object {
         private val TAG = PreviewFragment::class.qualifiedName
-        private const val STR_URI = "1"
-        private const val STR_NAME = "2"
+        private const val STR_URI = "CATEGORY_RECENT_FILE"
+        private const val STR_NAME = "CATEGORY_NAME"
+
+        private const val MAX_WIDTH = 1280
+        private const val MAX_HEIGHT = 720
 
         @JvmStatic
         //fun newInstance(param: LastPicture) = PreviewFragment()
         fun newInstance(param: LastPicture) = PreviewFragment().apply {
-            bundleOf(
+            arguments = bundleOf(
                 STR_URI to param.strUri,
                 STR_NAME to param.strName
             )
@@ -181,7 +176,6 @@ class PreviewFragment : Fragment() {
 
     private fun openCamera() {
         connectCamera()
-        Log.i(TAG, "strUri: ${arguments?.getString(STR_URI)}, strName: ${arguments?.getString(STR_NAME)}")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

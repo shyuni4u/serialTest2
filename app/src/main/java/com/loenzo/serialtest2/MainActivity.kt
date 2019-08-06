@@ -12,22 +12,13 @@ import android.provider.MediaStore
 import android.widget.Toast
 import kotlinx.android.synthetic.main.content_main.*
 import java.io.File
-import android.hardware.camera2.*
-import android.view.Surface
 import androidx.fragment.app.Fragment
-import java.util.concurrent.locks.ReentrantLock
 import android.Manifest.permission as _permission
 
 class MainActivity : AppCompatActivity() {
     //  like static
     companion object {
         private const val APP_NAME = "MEMORIA"
-
-        // image pick code
-        private const val IMAGE_PICK_CODE = 1001
-
-        //  make folder code
-        private const val MAKE_FOLDER_CODE = 1002
 
         // Permission code
         private const val PERMISSION_CODE = 1000
@@ -37,8 +28,6 @@ class MainActivity : AppCompatActivity() {
             _permission.READ_EXTERNAL_STORAGE,
             _permission.CAMERA)
 
-        private val sharedPermissionLock = ReentrantLock()
-
         var lasts: ArrayList<LastPicture> = ArrayList()
         var categories: ArrayList<String> = ArrayList()
     }
@@ -47,14 +36,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.content_main)
 
-        getUsePermission(this)
+        getUsePermission()
 
         if (checkPermissions().isEmpty()) {
             initCategory(this)
         }
     }
 
-    private fun getUsePermission(context: Context) {
+    private fun getUsePermission() {
         // check runtime permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // check external storage
@@ -105,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         //  load folder list
         for (file in listFiles) {
             if (file.isDirectory) {
-                val selection = "bucket_display_name=?"
+                val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
                 val selectionArg = arrayOf(file.name)
                 val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                 val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
@@ -124,8 +113,8 @@ class MainActivity : AppCompatActivity() {
                         val fileName: String = cursor.getString(cursor.getColumnIndex(select[1]))
 
                         if (fileName.startsWith(dir)) {
-                            val file = File(fileName)
-                            if (file.exists() && !categories.contains(folderName)) {
+                            val tempFile = File(fileName)
+                            if (tempFile.exists() && !categories.contains(folderName)) {
                                 categories.add(folderName)
                                 lasts.add(LastPicture(fileName, folderName))
                             }
@@ -139,11 +128,13 @@ class MainActivity : AppCompatActivity() {
         makeViewPager()
     }
 
+    /*
     private fun replaceFragment(fragment: Fragment) {
         val fragmentTransaction = supportFragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.fragmentContainer, fragment)
         fragmentTransaction.commit()
     }
+    */
 
     private fun addFragment(fragment: Fragment) {
         val fragmentTransaction = supportFragmentManager.beginTransaction()
@@ -160,26 +151,6 @@ class MainActivity : AppCompatActivity() {
 
     fun openCamera(param: LastPicture) {
         addFragment(PreviewFragment.newInstance(param))
-    }
-
-    private fun areDimensionsSwapped(displayRotation: Int, cameraCharacteristics: CameraCharacteristics): Boolean {
-        var swappedDimensions = false
-        when (displayRotation) {
-            Surface.ROTATION_0, Surface.ROTATION_180 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 270) {
-                    swappedDimensions = true
-                }
-            }
-            Surface.ROTATION_90, Surface.ROTATION_270 -> {
-                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 180) {
-                    swappedDimensions = true
-                }
-            }
-            else -> {
-                // invalid display rotation
-            }
-        }
-        return swappedDimensions
     }
 
     fun makeCategoryFolder(strCategoryName: String) {
