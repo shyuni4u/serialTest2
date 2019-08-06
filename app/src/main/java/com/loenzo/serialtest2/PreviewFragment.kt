@@ -130,19 +130,16 @@ class PreviewFragment : Fragment() {
 
     companion object {
         private val TAG = PreviewFragment::class.qualifiedName
-        private lateinit var STR_URI: String
-        private lateinit var STR_NAME: String
+        private const val STR_URI = "1"
+        private const val STR_NAME = "2"
 
         @JvmStatic
-        //fun newInstance(item: LastPicture) = PreviewFragment()
+        //fun newInstance(param: LastPicture) = PreviewFragment()
         fun newInstance(param: LastPicture) = PreviewFragment().apply {
-            val args = Bundle()
-            args.putString(STR_URI, param.strUri)
-            args.putString(STR_NAME, param.strName)
-
-            val fragment = PreviewFragment()
-            fragment.arguments = args
-            return fragment
+            bundleOf(
+                STR_URI to param.strUri,
+                STR_NAME to param.strName
+            )
         }
     }
 
@@ -184,7 +181,7 @@ class PreviewFragment : Fragment() {
 
     private fun openCamera() {
         connectCamera()
-        Log.i(TAG, "strUri: $STR_URI, strName: $STR_NAME")
+        Log.i(TAG, "strUri: ${arguments?.getString(STR_URI)}, strName: ${arguments?.getString(STR_NAME)}")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

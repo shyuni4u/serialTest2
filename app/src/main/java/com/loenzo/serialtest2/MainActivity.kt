@@ -158,8 +158,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun openCamera(item: LastPicture) {
-        addFragment(PreviewFragment.newInstance(item))
+    fun openCamera(param: LastPicture) {
+        addFragment(PreviewFragment.newInstance(param))
     }
 
     private fun areDimensionsSwapped(displayRotation: Int, cameraCharacteristics: CameraCharacteristics): Boolean {
