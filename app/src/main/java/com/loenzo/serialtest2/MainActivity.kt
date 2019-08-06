@@ -9,10 +9,12 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import kotlinx.android.synthetic.main.content_main.*
 import java.io.File
+import android.hardware.camera2.*
+import android.view.Surface
+import androidx.fragment.app.Fragment
 import java.util.concurrent.locks.ReentrantLock
 import android.Manifest.permission as _permission
 
@@ -134,10 +136,16 @@ class MainActivity : AppCompatActivity() {
 
             }
         }
-        makePagerView()
+        makeViewPager()
     }
 
-    fun makePagerView(moveLast: Boolean = false) {
+    private fun replaceFragment(fragment: Fragment) {
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.fragmentContainer, fragment)
+        fragmentTransaction.commit()
+    }
+
+    fun makeViewPager(moveLast: Boolean = false) {
         lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager)
         if (moveLast) {
             lastImages.currentItem = lasts.size
@@ -145,7 +153,67 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun openCamera() {
-        Log.i("CAMERA", "TEST")
+        replaceFragment(PreviewFragment.newInstance())
+        /*
+        val cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
+
+        if (cameraManager.cameraIdList.isEmpty())   return
+
+        val frontCamera = cameraManager.cameraIdList[LENS_FACING_FRONT]
+
+        cameraManager.openCamera(frontCamera, object: CameraDevice.StateCallback () {
+            override fun onDisconnected(cameraDevice: CameraDevice) {
+                Log.i("CAMERA", "onDisconnected")
+            }
+
+            override fun onError(cameraDevice: CameraDevice, p1: Int) {
+                Log.i("CAMERA", "onError")
+            }
+
+            override fun onOpened(cameraDevice: CameraDevice) {
+                Log.i("CAMERA", "onOpened")
+                // use the camera
+                val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraDevice.id)
+                cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let {
+                    streamConfigurationMap -> streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)?.let {
+                    yuvSizes -> val previewSize = yuvSizes.last()
+
+                    //  cont.
+                    val displayRotation = windowManager.defaultDisplay.rotation
+
+                    val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
+
+                    val rotatedPreviewWidth = if (swappedDimensions) previewSize.height
+                    else previewSize.width
+                    val rotatedPreviewHeight = if (swappedDimensions) previewSize.width
+                    else previewSize.height
+
+                    surfaceView.holder.setFixedSize(rotatedPreviewWidth, rotatedPreviewHeight)
+                    }
+                }
+            }
+        }, Handler {true} )
+        */
+    }
+
+    private fun areDimensionsSwapped(displayRotation: Int, cameraCharacteristics: CameraCharacteristics): Boolean {
+        var swappedDimensions = false
+        when (displayRotation) {
+            Surface.ROTATION_0, Surface.ROTATION_180 -> {
+                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 90 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 270) {
+                    swappedDimensions = true
+                }
+            }
+            Surface.ROTATION_90, Surface.ROTATION_270 -> {
+                if (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 0 || cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) == 180) {
+                    swappedDimensions = true
+                }
+            }
+            else -> {
+                // invalid display rotation
+            }
+        }
+        return swappedDimensions
     }
 
     fun makeCategoryFolder(strCategoryName: String) {

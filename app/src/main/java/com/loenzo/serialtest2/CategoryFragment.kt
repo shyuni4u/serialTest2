@@ -40,7 +40,7 @@ class CategoryFragment(private val _category: LastPicture) : Fragment () {
                     MainActivity.lasts.add(LastPicture("@@EMPTY@@", newName))
                 }
                 (context as MainActivity).makeCategoryFolder(newName)
-                (context as MainActivity).makePagerView(true)
+                (context as MainActivity).makeViewPager(true)
             } }
             builder.setNegativeButton(resources.getString(R.string.cancel)
             ) { _, _ -> run {} }
