@@ -145,6 +145,12 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.commit()
     }
 
+    private fun addFragment(fragment: Fragment) {
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.add(R.id.fragmentContainer, fragment)
+        fragmentTransaction.commit()
+    }
+
     fun makeViewPager(moveLast: Boolean = false) {
         lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager)
         if (moveLast) {
@@ -152,48 +158,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun openCamera() {
-        replaceFragment(PreviewFragment.newInstance())
-        /*
-        val cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
-
-        if (cameraManager.cameraIdList.isEmpty())   return
-
-        val frontCamera = cameraManager.cameraIdList[LENS_FACING_FRONT]
-
-        cameraManager.openCamera(frontCamera, object: CameraDevice.StateCallback () {
-            override fun onDisconnected(cameraDevice: CameraDevice) {
-                Log.i("CAMERA", "onDisconnected")
-            }
-
-            override fun onError(cameraDevice: CameraDevice, p1: Int) {
-                Log.i("CAMERA", "onError")
-            }
-
-            override fun onOpened(cameraDevice: CameraDevice) {
-                Log.i("CAMERA", "onOpened")
-                // use the camera
-                val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraDevice.id)
-                cameraCharacteristics[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let {
-                    streamConfigurationMap -> streamConfigurationMap.getOutputSizes(ImageFormat.YUV_420_888)?.let {
-                    yuvSizes -> val previewSize = yuvSizes.last()
-
-                    //  cont.
-                    val displayRotation = windowManager.defaultDisplay.rotation
-
-                    val swappedDimensions = areDimensionsSwapped(displayRotation, cameraCharacteristics)
-
-                    val rotatedPreviewWidth = if (swappedDimensions) previewSize.height
-                    else previewSize.width
-                    val rotatedPreviewHeight = if (swappedDimensions) previewSize.width
-                    else previewSize.height
-
-                    surfaceView.holder.setFixedSize(rotatedPreviewWidth, rotatedPreviewHeight)
-                    }
-                }
-            }
-        }, Handler {true} )
-        */
+    fun openCamera(item: LastPicture) {
+        addFragment(PreviewFragment.newInstance(item))
     }
 
     private fun areDimensionsSwapped(displayRotation: Int, cameraCharacteristics: CameraCharacteristics): Boolean {

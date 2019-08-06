@@ -53,7 +53,7 @@ class CategoryFragment(private val _category: LastPicture) : Fragment () {
         }
 
         btnCamera.setOnClickListener {
-            (context as MainActivity).openCamera()
+            (context as MainActivity).openCamera(_category)
         }
 
         btnVideo.setOnClickListener {

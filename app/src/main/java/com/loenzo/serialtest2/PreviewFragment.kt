@@ -9,8 +9,10 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.view.*
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.fragment_preview.*
+import java.io.Serializable
 import java.lang.IllegalArgumentException
 import java.util.*
 
@@ -128,7 +130,20 @@ class PreviewFragment : Fragment() {
 
     companion object {
         private val TAG = PreviewFragment::class.qualifiedName
-        @JvmStatic fun newInstance() = PreviewFragment()
+        private lateinit var STR_URI: String
+        private lateinit var STR_NAME: String
+
+        @JvmStatic
+        //fun newInstance(item: LastPicture) = PreviewFragment()
+        fun newInstance(param: LastPicture) = PreviewFragment().apply {
+            val args = Bundle()
+            args.putString(STR_URI, param.strUri)
+            args.putString(STR_NAME, param.strName)
+
+            val fragment = PreviewFragment()
+            fragment.arguments = args
+            return fragment
+        }
     }
 
     private val surfaceListener = object: TextureView.SurfaceTextureListener {
@@ -169,6 +184,7 @@ class PreviewFragment : Fragment() {
 
     private fun openCamera() {
         connectCamera()
+        Log.i(TAG, "strUri: $STR_URI, strName: $STR_NAME")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
