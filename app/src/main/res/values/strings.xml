@@ -6,5 +6,7 @@
     <string name="allow">Allow</string>
     <string name="cancel">Cancel</string>
     <string name="option">Option</string>
+    <string name="capture">Capture</string>
+    <string name="change">Change</string>
     <string name="none"> </string>
 </resources>

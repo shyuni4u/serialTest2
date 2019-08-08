@@ -128,13 +128,11 @@ class MainActivity : AppCompatActivity() {
         makeViewPager()
     }
 
-    /*
     private fun replaceFragment(fragment: Fragment) {
         val fragmentTransaction = supportFragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.fragmentContainer, fragment)
         fragmentTransaction.commit()
     }
-    */
 
     private fun addFragment(fragment: Fragment) {
         val fragmentTransaction = supportFragmentManager.beginTransaction()
@@ -150,7 +148,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun openCamera(param: LastPicture) {
-        addFragment(PreviewFragment.newInstance(param))
+        replaceFragment(PreviewFragment.newInstance(param))
     }
 
     fun makeCategoryFolder(strCategoryName: String) {

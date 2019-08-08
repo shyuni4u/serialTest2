@@ -2,6 +2,8 @@ package com.loenzo.serialtest2
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.os.Bundle
@@ -9,12 +11,33 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.view.*
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.SeekBar
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.fragment_preview.*
 import java.lang.IllegalArgumentException
 
 class PreviewFragment : Fragment() {
+
+    companion object {
+        private val TAG = PreviewFragment::class.qualifiedName
+        private const val STR_URI = "CATEGORY_RECENT_FILE"
+        private const val STR_NAME = "CATEGORY_NAME"
+
+        private const val MAX_WIDTH = 1280
+        private const val MAX_HEIGHT = 720
+
+        @JvmStatic
+        //fun newInstance(param: LastPicture) = PreviewFragment()
+        fun newInstance(param: LastPicture) = PreviewFragment().apply {
+            arguments = bundleOf(
+                STR_URI to param.strUri,
+                STR_NAME to param.strName
+            )
+        }
+    }
 
     private lateinit var captureSession: CameraCaptureSession
     private lateinit var captureRequestBuilder: CaptureRequest.Builder
@@ -24,7 +47,7 @@ class PreviewFragment : Fragment() {
         override fun onOpened(camera: CameraDevice) {
             Log.d(TAG, "camera device opened")
             cameraDevice = camera
-            previewSesstion()
+            previewSession()
         }
 
         override fun onDisconnected(camera: CameraDevice) {
@@ -45,7 +68,7 @@ class PreviewFragment : Fragment() {
         activity?.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     }
 
-    private fun previewSesstion() {
+    private fun previewSession() {
         val surfaceTexture = previewTextureView.surfaceTexture
         surfaceTexture.setDefaultBufferSize(MAX_WIDTH, MAX_HEIGHT)
         val surface = Surface(surfaceTexture)
@@ -66,13 +89,6 @@ class PreviewFragment : Fragment() {
                 }
 
             }, null)
-    }
-
-    private fun closeCamera() {
-        if (this::captureSession.isInitialized)
-            captureSession.close()
-        if (this::cameraDevice.isInitialized)
-            cameraDevice.close()
     }
 
     private fun startBackgroundThread() {
@@ -120,27 +136,8 @@ class PreviewFragment : Fragment() {
         }
     }
 
-    companion object {
-        private val TAG = PreviewFragment::class.qualifiedName
-        private const val STR_URI = "CATEGORY_RECENT_FILE"
-        private const val STR_NAME = "CATEGORY_NAME"
-
-        private const val MAX_WIDTH = 1280
-        private const val MAX_HEIGHT = 720
-
-        @JvmStatic
-        //fun newInstance(param: LastPicture) = PreviewFragment()
-        fun newInstance(param: LastPicture) = PreviewFragment().apply {
-            arguments = bundleOf(
-                STR_URI to param.strUri,
-                STR_NAME to param.strName
-            )
-        }
-    }
-
     private val surfaceListener = object: TextureView.SurfaceTextureListener {
-        override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture?, p1: Int, p2: Int) {
-        }
+        override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture?, p1: Int, p2: Int) {}
 
         override fun onSurfaceTextureUpdated(p0: SurfaceTexture?) = Unit
 
@@ -150,12 +147,65 @@ class PreviewFragment : Fragment() {
             Log.d(TAG, "textureSurface width: $width, height: $height")
             openCamera()
         }
-
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    private fun openCamera() {
+        connectCamera()
+    }
+
+    private fun closeCamera() {
+        if (this::captureSession.isInitialized)
+            captureSession.close()
+        if (this::cameraDevice.isInitialized)
+            cameraDevice.close()
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view: View = inflater.inflate(R.layout.fragment_preview, container, false)
+        val imgBack: ImageView = view.findViewById(R.id.imgBack)
+        val btnChange: Button = view.findViewById(R.id.btnChange)
+        val barAlpha: SeekBar = view.findViewById(R.id.barAlpha)
+        val btnCapture: Button = view.findViewById(R.id.btnCapture)
+
+        btnChange.setOnClickListener {
+            Log.i(TAG, "CHANGE BUTTON")
+        }
+
+        barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
+                imgBack.alpha = (i * 0.01).toFloat()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+
+        })
+
+        btnCapture.setOnClickListener {
+            Log.i(TAG, "CAPTURE BUTTON")
+        }
+
+        Log.i(TAG, "strUri: ${arguments?.getString(STR_URI)}, strName: ${arguments?.getString(STR_NAME)}")
+        val bitmap: Bitmap = BitmapFactory.decodeFile(arguments?.getString(STR_URI))
+        imgBack.setImageBitmap(bitmap)
+        imgBack.alpha = 0.4F
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        activity?.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     }
 
     override fun onResume() {
@@ -172,22 +222,5 @@ class PreviewFragment : Fragment() {
         closeCamera()
         stopBackgroundThread()
         super.onPause()
-    }
-
-    private fun openCamera() {
-        connectCamera()
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_preview, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        activity?.window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     }
 }
