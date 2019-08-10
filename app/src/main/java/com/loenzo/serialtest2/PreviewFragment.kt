@@ -1,15 +1,19 @@
 package com.loenzo.serialtest2
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
+import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.util.Size
 import android.view.*
 import android.widget.Button
 import android.widget.ImageView
@@ -18,11 +22,21 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.fragment_preview.*
 import java.lang.IllegalArgumentException
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureRequest
+import android.media.Image
+import android.os.Environment
+import java.io.*
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
+
 
 class PreviewFragment : Fragment() {
 
     companion object {
-        private val TAG = PreviewFragment::class.qualifiedName
+        private const val APP_NAME = "MEMORIA"
+        private const val TAG = "PreviewFrag: "
         private const val STR_URI = "CATEGORY_RECENT_FILE"
         private const val STR_NAME = "CATEGORY_NAME"
 
@@ -61,6 +75,62 @@ class PreviewFragment : Fragment() {
         }
 
     }
+    private val captureCallback = object: CameraCaptureSession.CaptureCallback() {
+        /*
+        private fun process(result: CaptureResult) {
+            when (state) {
+                STATE_PREVIEW -> Unit // Do nothing when the camera preview is working normally.
+                STATE_WAITING_LOCK -> capturePicture(result)
+                STATE_WAITING_PRECAPTURE -> {
+                    // CONTROL_AE_STATE can be null on some devices
+                    val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
+                    if (aeState == null ||
+                        aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                        aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                        state = STATE_WAITING_NON_PRECAPTURE
+                    }
+                }
+                STATE_WAITING_NON_PRECAPTURE -> {
+                    // CONTROL_AE_STATE can be null on some devices
+                    val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
+                    if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                        state = STATE_PICTURE_TAKEN
+                        captureStillPicture()
+                    }
+                }
+            }
+        }
+
+        private fun capturePicture(result: CaptureResult) {
+            val afState = result.get(CaptureResult.CONTROL_AF_STATE)
+            if (afState == null) {
+                captureStillPicture()
+            } else if (afState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
+                || afState == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) {
+                // CONTROL_AE_STATE can be null on some devices
+                val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
+                if (aeState == null || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                    state = STATE_PICTURE_TAKEN
+                    captureStillPicture()
+                } else {
+                    runPrecaptureSequence()
+                }
+            }
+        }
+
+        override fun onCaptureProgressed(session: CameraCaptureSession,
+                                         request: CaptureRequest,
+                                         partialResult: CaptureResult) {
+            process(partialResult)
+        }
+
+        override fun onCaptureCompleted(session: CameraCaptureSession,
+                                        request: CaptureRequest,
+                                        result: TotalCaptureResult) {
+            process(result)
+        }
+        */
+    }
     private lateinit var backgroundThread: HandlerThread
     private lateinit var backgroundHandler: Handler
 
@@ -84,10 +154,9 @@ class PreviewFragment : Fragment() {
 
                 override fun onConfigured(session: CameraCaptureSession) {
                     captureSession = session
-                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                     captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null)
                 }
-
             }, null)
     }
 
@@ -191,7 +260,6 @@ class PreviewFragment : Fragment() {
             Log.i(TAG, "CAPTURE BUTTON")
         }
 
-        Log.i(TAG, "strUri: ${arguments?.getString(STR_URI)}, strName: ${arguments?.getString(STR_NAME)}")
         val bitmap: Bitmap = BitmapFactory.decodeFile(arguments?.getString(STR_URI))
         imgBack.setImageBitmap(bitmap)
         imgBack.alpha = 0.4F

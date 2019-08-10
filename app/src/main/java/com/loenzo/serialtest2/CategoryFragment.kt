@@ -12,6 +12,9 @@ import androidx.fragment.app.Fragment
 
 class CategoryFragment(private val _category: LastPicture) : Fragment () {
 
+    companion object {
+        private const val TAG = "CategoryFrag: "
+    }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view: View = inflater.inflate(R.layout.row_category, container, false)
         val categoryImage: ImageView = view.findViewById(R.id.lastImage)

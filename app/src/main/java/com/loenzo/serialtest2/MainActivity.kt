@@ -18,6 +18,7 @@ import android.Manifest.permission as _permission
 class MainActivity : AppCompatActivity() {
     //  like static
     companion object {
+        private const val TAG = "MainActivity: "
         private const val APP_NAME = "MEMORIA"
 
         // Permission code
