@@ -4,7 +4,9 @@
              android:orientation="horizontal"
              android:layout_width="fill_parent"
              android:layout_height="fill_parent">
-
+    <!--
+    <com.loenzo.serialtest2.AutoFitTextureView
+    -->
     <TextureView
             android:id="@+id/previewTextureView"
             android:layout_width="match_parent"
