@@ -5,9 +5,9 @@
              android:layout_width="fill_parent"
              android:layout_height="fill_parent">
     <!--
-    <com.loenzo.serialtest2.AutoFitTextureView
-    -->
     <TextureView
+    -->
+    <com.loenzo.serialtest2.AutoFitTextureView
             android:id="@+id/previewTextureView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

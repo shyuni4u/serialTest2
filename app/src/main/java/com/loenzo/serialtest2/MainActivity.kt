@@ -1,5 +1,6 @@
 package com.loenzo.serialtest2
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
@@ -74,6 +75,7 @@ class MainActivity : AppCompatActivity() {
         return requests
     }
 
+    @SuppressLint("InlinedApi", "Recycle")
     private fun initCategory(context: Context) {
         val sdcard: String = Environment.getExternalStorageState()
         var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
@@ -99,7 +101,7 @@ class MainActivity : AppCompatActivity() {
                 val selectionArg = arrayOf(file.name)
                 val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                 val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
-                val orderBy: String = MediaStore.Images.Media.DATE_ADDED + " DESC"
+                val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC"
 
                 val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
 
