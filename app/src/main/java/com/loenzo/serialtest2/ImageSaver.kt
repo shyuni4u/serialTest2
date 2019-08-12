@@ -46,6 +46,6 @@ internal class ImageSaver(
     }
 
     companion object {
-        private val TAG = "ImageSaver"
+        private const val TAG = "ImageSaver"
     }
 }
