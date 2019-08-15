@@ -2,6 +2,7 @@ package com.loenzo.serialtest2
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
@@ -154,6 +155,13 @@ class MainActivity : AppCompatActivity() {
         replaceFragment(PreviewFragment.newInstance(param))
     }
 
+    fun openCamera2(param: LastPicture) {
+        val intent = Intent(this, CameraActivity::class.java)
+        intent.putExtra("URI", param.strUri)
+        intent.putExtra("NAME", param.strName)
+        startActivityForResult(intent, 1)
+    }
+
     fun makeCategoryFolder(strCategoryName: String) {
         val sdcard: String = Environment.getExternalStorageState()
         var f: File?
@@ -199,4 +207,6 @@ private fun pickImageFromGallery() {
     val intent = Intent(Intent.ACTION_PICK)
     intent.type = "image/*"
 }
+
+https://brunch.co.kr/@mystoryg/55
 */

@@ -1,55 +1,28 @@
-/*
- * Copyright 2017 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.loenzo.serialtest2
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.*
-import android.hardware.camera2.CameraAccessException
-import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CameraManager
-import android.hardware.camera2.CameraMetadata
-import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.CaptureResult
-import android.hardware.camera2.TotalCaptureResult
+import android.hardware.camera2.*
 import android.media.ImageReader
-import android.os.Bundle
-import android.os.Environment
-import android.os.Handler
-import android.os.HandlerThread
+import android.net.Uri
+import android.os.*
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
-import android.view.LayoutInflater
-import android.view.Surface
-import android.view.TextureView
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -58,7 +31,64 @@ import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlin.math.max
 
-class PreviewFragment : Fragment() {
+class CameraActivity : AppCompatActivity () {
+
+    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.camera_main)
+
+        uri = intent.getStringExtra("URI")
+        name = intent.getStringExtra("NAME")
+
+        textureView = this.findViewById(R.id.textureView)
+
+        val btnNormal: Button = this.findViewById(R.id.normal)
+        val btnWide: Button = this.findViewById(R.id.wide)
+        val btnCapture: Button = this.findViewById(R.id.capture)
+        val btnChange: Button = this.findViewById(R.id.change)
+
+        btnCapture.setOnClickListener {
+            lockFocus()
+        }
+
+        val sdcard: String = Environment.getExternalStorageState()
+        val f: File?
+
+        f = when (sdcard != Environment.MEDIA_MOUNTED) {
+            true -> Environment.getRootDirectory()
+            false -> Environment.getExternalStorageDirectory()
+        }
+
+        FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + name
+
+        /*
+        btnChange.setOnClickListener {
+        Log.i(TAG, "CHANGE BUTTON")
+        }
+
+        barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+        override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
+        imgBack.alpha = (i * 0.01).toFloat()
+        }
+
+        override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+        override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+
+        })
+
+        btnCapture.setOnClickListener {
+        lockFocus()
+        }
+
+        if (arguments?.getString(STR_URI) != "@@EMPTY@@") {
+        val bitmap: Bitmap = BitmapFactory.decodeFile(arguments?.getString(STR_URI))
+        imgBack.setImageBitmap(bitmap)
+        imgBack.alpha = 0.4F
+        }
+         */
+    }
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
@@ -66,6 +96,7 @@ class PreviewFragment : Fragment() {
      */
     private val surfaceTextureListener = object : TextureView.SurfaceTextureListener {
 
+        @RequiresApi(Build.VERSION_CODES.M)
         override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
             openCamera(width, height)
         }
@@ -112,19 +143,19 @@ class PreviewFragment : Fragment() {
 
         override fun onOpened(cameraDevice: CameraDevice) {
             cameraOpenCloseLock.release()
-            this@PreviewFragment.cameraDevice = cameraDevice
+            this@CameraActivity.cameraDevice = cameraDevice
             createCameraPreviewSession()
         }
 
         override fun onDisconnected(cameraDevice: CameraDevice) {
             cameraOpenCloseLock.release()
             cameraDevice.close()
-            this@PreviewFragment.cameraDevice = null
+            this@CameraActivity.cameraDevice = null
         }
 
         override fun onError(cameraDevice: CameraDevice, error: Int) {
             onDisconnected(cameraDevice)
-            this@PreviewFragment.activity?.finish()
+            this@CameraActivity.finish()
         }
 
     }
@@ -153,8 +184,16 @@ class PreviewFragment : Fragment() {
      * This a callback object for the [ImageReader]. "onImageAvailable" will be called when a
      * still image is ready to be saved.
      */
+    @SuppressLint("SimpleDateFormat")
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
+        val sdf = SimpleDateFormat("yyyyMddhhmmss")
+        val currentDate = sdf.format(Date())
+        file = File(FILE_PATH, name + "_$currentDate.jpg")
         backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file))
+        val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+            data = Uri.fromFile(file)
+        }
+        this@CameraActivity.sendBroadcast(intent)
     }
 
     /**
@@ -237,73 +276,22 @@ class PreviewFragment : Fragment() {
 
         override fun onCaptureProgressed(session: CameraCaptureSession,
                                          request: CaptureRequest,
-                                         partialResult: CaptureResult) {
+                                         partialResult: CaptureResult
+        ) {
             process(partialResult)
         }
 
         override fun onCaptureCompleted(session: CameraCaptureSession,
                                         request: CaptureRequest,
-                                        result: TotalCaptureResult) {
-            Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+                                        result: TotalCaptureResult
+        ) {
+            Toast.makeText(applicationContext, "Saved", Toast.LENGTH_SHORT).show()
             process(result)
         }
 
     }
 
-    override fun onCreateView(inflater: LayoutInflater,
-                              container: ViewGroup?,
-                              savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_preview, container, false)
-
-    @SuppressLint("SimpleDateFormat")
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        textureView = view.findViewById(R.id.previewTextureView)
-
-        val imgBack: ImageView = view.findViewById(R.id.imgBack)
-        val btnChange: Button = view.findViewById(R.id.btnChange)
-        val barAlpha: SeekBar = view.findViewById(R.id.barAlpha)
-        val btnCapture: Button = view.findViewById(R.id.btnCapture)
-
-        btnChange.setOnClickListener {
-            Log.i(TAG, "CHANGE BUTTON")
-        }
-
-        barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
-                imgBack.alpha = (i * 0.01).toFloat()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-
-        })
-
-        btnCapture.setOnClickListener {
-            lockFocus()
-        }
-
-        if (arguments?.getString(STR_URI) != "@@EMPTY@@") {
-            val bitmap: Bitmap = BitmapFactory.decodeFile(arguments?.getString(STR_URI))
-            imgBack.setImageBitmap(bitmap)
-            imgBack.alpha = 0.4F
-        }
-
-        val sdcard: String = Environment.getExternalStorageState()
-        val f: File?
-
-        f = when (sdcard != Environment.MEDIA_MOUNTED) {
-            true -> Environment.getRootDirectory()
-            false -> Environment.getExternalStorageDirectory()
-        }
-
-        val dir: String = f!!.absolutePath + "/$APP_NAME/" + arguments?.getString(STR_NAME)
-
-        val sdf = SimpleDateFormat("yyyyMddhhmmss")
-        val currentDate = sdf.format(Date())
-        file = File(dir, "${arguments?.getString(STR_NAME)}_$currentDate.jpg")
-    }
-
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onResume() {
         super.onResume()
         startBackgroundThread()
@@ -325,6 +313,7 @@ class PreviewFragment : Fragment() {
         super.onPause()
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun requestCameraPermission() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
             Log.e(TAG, "childFragmentManager: FRAGMENT_DIALOG")
@@ -352,7 +341,7 @@ class PreviewFragment : Fragment() {
      * @param height The height of available size for camera preview
      */
     private fun setUpCameraOutputs(width: Int, height: Int) {
-        val manager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = this.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             for (cameraId in manager.cameraIdList) {
                 val characteristics = manager.getCameraCharacteristics(cameraId)
@@ -378,13 +367,13 @@ class PreviewFragment : Fragment() {
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
-                val displayRotation = activity!!.windowManager.defaultDisplay.rotation
+                val displayRotation = this.windowManager.defaultDisplay.rotation
 
                 sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
                 val swappedDimensions = areDimensionsSwapped(displayRotation)
 
                 val displaySize = Point()
-                activity!!.windowManager.defaultDisplay.getSize(displaySize)
+                this.windowManager.defaultDisplay.getSize(displaySize)
                 val rotatedPreviewWidth = if (swappedDimensions) height else width
                 val rotatedPreviewHeight = if (swappedDimensions) width else height
                 var maxPreviewWidth = if (swappedDimensions) displaySize.y else displaySize.x
@@ -456,17 +445,18 @@ class PreviewFragment : Fragment() {
     }
 
     /**
-     * Opens the camera specified by [PreviewFragment.cameraId].
+     * Opens the camera specified by [CameraActivity.cameraId].
      */
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun openCamera(width: Int, height: Int) {
-        val permission = ContextCompat.checkSelfPermission(activity!!, Manifest.permission.CAMERA)
+        val permission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
         if (permission != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission()
             return
         }
         setUpCameraOutputs(width, height)
         configureTransform(width, height)
-        val manager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = this.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             // Wait for camera to open - 2.5 seconds is sufficient
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
@@ -555,7 +545,8 @@ class PreviewFragment : Fragment() {
                         captureSession = cameraCaptureSession
                         try {
                             // Auto focus should be continuous for camera preview.
-                            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                            previewRequestBuilder.set(
+                                CaptureRequest.CONTROL_AF_MODE,
                                 CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                             // Flash is automatically enabled when necessary.
                             setAutoFlash(previewRequestBuilder)
@@ -589,8 +580,7 @@ class PreviewFragment : Fragment() {
      * @param viewHeight The height of `textureView`
      */
     private fun configureTransform(viewWidth: Int, viewHeight: Int) {
-        activity ?: return
-        val rotation = activity!!.windowManager.defaultDisplay.rotation
+        val rotation = this.windowManager.defaultDisplay.rotation
         val matrix = Matrix()
         val viewRect = RectF(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val bufferRect = RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
@@ -617,7 +607,8 @@ class PreviewFragment : Fragment() {
     private fun lockFocus() {
         try {
             // This is how to tell the camera to lock focus.
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AF_TRIGGER,
                 CameraMetadata.CONTROL_AF_TRIGGER_START)
             // Tell #captureCallback to wait for the lock.
             state = STATE_WAITING_LOCK
@@ -636,7 +627,8 @@ class PreviewFragment : Fragment() {
     private fun runPrecaptureSequence() {
         try {
             // This is how to tell the camera to trigger.
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                 CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START)
             // Tell #captureCallback to wait for the precapture sequence to be set.
             state = STATE_WAITING_PRECAPTURE
@@ -654,8 +646,8 @@ class PreviewFragment : Fragment() {
      */
     private fun captureStillPicture() {
         try {
-            if (activity == null || cameraDevice == null) return
-            val rotation = activity!!.windowManager.defaultDisplay.rotation
+            if (cameraDevice == null) return
+            val rotation = this.windowManager.defaultDisplay.rotation
 
             // This is the CaptureRequest.Builder that we use to take a picture.
             val captureBuilder = cameraDevice?.createCaptureRequest(
@@ -666,18 +658,21 @@ class PreviewFragment : Fragment() {
                 // We have to take that into account and rotate JPEG properly.
                 // For devices with orientation of 90, we return our mapping from ORIENTATIONS.
                 // For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
-                set(CaptureRequest.JPEG_ORIENTATION,
+                set(
+                    CaptureRequest.JPEG_ORIENTATION,
                     (ORIENTATIONS.get(rotation) + sensorOrientation + 270) % 360)
 
                 // Use the same AE and AF modes as the preview.
-                set(CaptureRequest.CONTROL_AF_MODE,
+                set(
+                    CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
             }?.also { setAutoFlash(it) }
             val captureCallback = object : CameraCaptureSession.CaptureCallback() {
 
                 override fun onCaptureCompleted(session: CameraCaptureSession,
                                                 request: CaptureRequest,
-                                                result: TotalCaptureResult) {
+                                                result: TotalCaptureResult
+                ) {
                     unlockFocus()
                 }
             }
@@ -700,7 +695,8 @@ class PreviewFragment : Fragment() {
     private fun unlockFocus() {
         try {
             // Reset the auto-focus trigger
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AF_TRIGGER,
                 CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
             setAutoFlash(previewRequestBuilder)
             captureSession?.capture(previewRequestBuilder.build(), captureCallback,
@@ -717,7 +713,8 @@ class PreviewFragment : Fragment() {
 
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder) {
         if (flashSupported) {
-            requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+            requestBuilder.set(
+                CaptureRequest.CONTROL_AE_MODE,
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
         }
     }
@@ -740,8 +737,13 @@ class PreviewFragment : Fragment() {
         /**
          * Tag for the [Log].
          */
-        private const val TAG = "PreviewFragment"
+        private const val TAG = "CameraActivity"
         private const val APP_NAME = "MEMORIA"
+
+        private lateinit var FILE_PATH: String
+
+        private lateinit var uri: String
+        private lateinit var name: String
 
         /**
          * Camera state: Showing camera preview.
@@ -777,9 +779,6 @@ class PreviewFragment : Fragment() {
          * Max preview height that is guaranteed by Camera2 API
          */
         private const val MAX_PREVIEW_HEIGHT = 1080
-
-        private const val STR_URI = "CATEGORY_RECENT_FILE"
-        private const val STR_NAME = "CATEGORY_NAME"
 
         /**
          * Given `choices` of `Size`s supported by a camera, choose the smallest one that
@@ -833,13 +832,6 @@ class PreviewFragment : Fragment() {
                     choices[0]
                 }
             }
-        }
-
-        @JvmStatic fun newInstance(param: LastPicture) = PreviewFragment().apply {
-            arguments = bundleOf(
-                STR_URI to param.strUri,
-                STR_NAME to param.strName
-            )
         }
     }
 }

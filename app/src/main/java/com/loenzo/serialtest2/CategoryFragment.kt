@@ -60,7 +60,8 @@ class CategoryFragment(private val _category: LastPicture) : Fragment () {
         }
 
         btnVideo.setOnClickListener {
-            Toast.makeText(context, "VIDEO BUTTON", Toast.LENGTH_SHORT).show()
+            (context as MainActivity).openCamera2(_category)
+            //Toast.makeText(context, "VIDEO BUTTON", Toast.LENGTH_SHORT).show()
         }
 
         btnOption.setOnClickListener {
