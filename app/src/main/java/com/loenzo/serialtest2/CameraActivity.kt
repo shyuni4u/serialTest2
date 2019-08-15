@@ -194,6 +194,8 @@ class CameraActivity : AppCompatActivity () {
             data = Uri.fromFile(file)
         }
         this@CameraActivity.sendBroadcast(intent)
+
+        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
     }
 
     /**
@@ -285,7 +287,6 @@ class CameraActivity : AppCompatActivity () {
                                         request: CaptureRequest,
                                         result: TotalCaptureResult
         ) {
-            Toast.makeText(applicationContext, "Saved", Toast.LENGTH_SHORT).show()
             process(result)
         }
 
