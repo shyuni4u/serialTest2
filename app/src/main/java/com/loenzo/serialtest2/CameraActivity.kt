@@ -14,15 +14,13 @@ import android.os.*
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
-import android.view.*
+import android.view.Surface
+import android.view.TextureView
 import android.widget.Button
-import android.widget.ImageView
-import android.widget.SeekBar
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,6 +32,7 @@ import kotlin.math.max
 class CameraActivity : AppCompatActivity () {
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.camera_main)
@@ -50,6 +49,16 @@ class CameraActivity : AppCompatActivity () {
 
         btnCapture.setOnClickListener {
             lockFocus()
+        }
+
+        btnChange.setOnClickListener {
+            closeCamera()
+            if (textureView.isAvailable) {
+                lensFacing = 1 - lensFacing
+                openCamera(textureView.width, textureView.height)
+            } else {
+                textureView.surfaceTextureListener = surfaceTextureListener
+            }
         }
 
         val sdcard: String = Environment.getExternalStorageState()
@@ -230,6 +239,8 @@ class CameraActivity : AppCompatActivity () {
      */
     private var sensorOrientation = 0
 
+    private var lensFacing = CameraCharacteristics.LENS_FACING_BACK
+
     /**
      * A [CameraCaptureSession.CaptureCallback] that handles events related to JPEG capture.
      */
@@ -349,8 +360,7 @@ class CameraActivity : AppCompatActivity () {
 
                 // We don't use a front facing camera in this sample.
                 val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (cameraDirection != null &&
-                    cameraDirection == CameraCharacteristics.LENS_FACING_FRONT) {
+                if (cameraDirection != null && cameraDirection != lensFacing) {
                     continue
                 }
 
@@ -469,7 +479,6 @@ class CameraActivity : AppCompatActivity () {
         } catch (e: InterruptedException) {
             throw RuntimeException("Interrupted while trying to lock camera opening.", e)
         }
-
     }
 
     /**
