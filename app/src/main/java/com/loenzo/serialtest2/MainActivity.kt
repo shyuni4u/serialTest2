@@ -6,7 +6,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
+import androidx.core.os.bundleOf
 import kotlinx.android.synthetic.main.content_main.*
 import androidx.fragment.app.Fragment
 import android.Manifest.permission as _permission
@@ -70,6 +72,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun initCategory() {
         // read external storage check ... XXX not yet
+        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, makeParamList())
+    }
+
+    private fun makeParamList() : ArrayList<CategoryFragment> {
         sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
 
         val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
@@ -82,7 +88,15 @@ class MainActivity : AppCompatActivity() {
             editor.apply()
         }
 
-        makeViewPager()
+        val list: ArrayList<CategoryFragment> = ArrayList()
+
+        for (s in categorySet.sorted()) {
+            CategoryFragment().apply {
+                arguments = bundleOf("NAME" to s)
+                list.add(this)
+            }
+        }
+        return list
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -98,13 +112,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun makeViewPager(moveLast: Boolean = false) {
-        sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
-
-        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, sf)
-        if (moveLast) {
-            val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
-            lastImages.currentItem = categorySet!!.size
-        }
+        (lastImages.adapter as CategoryFragmentAdapter).setList(makeParamList())
     }
 
     fun openCamera(param: LastPicture) {
