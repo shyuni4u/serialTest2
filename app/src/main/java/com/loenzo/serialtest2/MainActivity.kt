@@ -1,19 +1,13 @@
 package com.loenzo.serialtest2
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.database.Cursor
-import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.widget.Toast
 import kotlinx.android.synthetic.main.content_main.*
-import java.io.File
 import androidx.fragment.app.Fragment
 import android.Manifest.permission as _permission
 
@@ -21,7 +15,6 @@ class MainActivity : AppCompatActivity() {
     //  like static
     companion object {
         private const val TAG = "MainActivity: "
-        private const val APP_NAME = "MEMORIA"
 
         // Permission code
         private const val PERMISSION_CODE = 1000
@@ -30,10 +23,9 @@ class MainActivity : AppCompatActivity() {
             _permission.WRITE_EXTERNAL_STORAGE,
             _permission.READ_EXTERNAL_STORAGE,
             _permission.CAMERA)
-
-        var lasts: ArrayList<LastPicture> = ArrayList()
-        var categories: ArrayList<String> = ArrayList()
     }
+
+    private lateinit var sf: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +33,10 @@ class MainActivity : AppCompatActivity() {
 
         getUsePermission()
 
+        sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
+
         if (checkPermissions().isEmpty()) {
-            initCategory(this)
+            initCategory()
         }
     }
 
@@ -76,59 +70,19 @@ class MainActivity : AppCompatActivity() {
         return requests
     }
 
-    @SuppressLint("InlinedApi", "Recycle")
-    private fun initCategory(context: Context) {
-        val sdcard: String = Environment.getExternalStorageState()
-        var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-            true -> Environment.getRootDirectory()
-            false -> Environment.getExternalStorageDirectory()
-        }
-        rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
-        val dir: String = rootDir.absolutePath
-        var listFiles = rootDir.listFiles()
+    private fun initCategory() {
+        // read external storage check ... XXX not yet
 
-        if (listFiles.isEmpty()) {
-            makeCategoryFolder("DEFAULT")
-            listFiles = rootDir.listFiles()
+        val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
+        if (categorySet.isNullOrEmpty() && !categorySet!!.contains("DEFAULT")) {
+            categorySet.add("DEFAULT")
+
+            val editor: SharedPreferences.Editor = sf.edit()
+            //editor.clear()
+            editor.putStringSet("CATEGORY_LIST", categorySet)
+            editor.apply()
         }
 
-        categories.clear()
-        lasts.clear()
-
-        //  load folder list
-        for (file in listFiles) {
-            if (file.isDirectory) {
-                val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
-                val selectionArg = arrayOf(file.name)
-                val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
-                val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC"
-
-                val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
-
-                if (cursor!!.count == 0) {
-                    if (!categories.contains(file.name)) {
-                        categories.add(file.name)
-                        lasts.add(LastPicture("@@EMPTY@@", file.name))
-                    }
-                } else {
-                    while (cursor.moveToNext()) {
-                        val folderName: String = cursor.getString(cursor.getColumnIndex(select[0]))
-                        val fileName: String = cursor.getString(cursor.getColumnIndex(select[1]))
-
-                        if (fileName.startsWith(dir)) {
-                            val tempFile = File(fileName)
-                            if (tempFile.exists() && !categories.contains(folderName)) {
-                                categories.add(folderName)
-                                lasts.add(LastPicture(fileName, folderName))
-                            }
-
-                        }
-                    }
-                }
-
-            }
-        }
         makeViewPager()
     }
 
@@ -145,38 +99,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun makeViewPager(moveLast: Boolean = false) {
-        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager)
+        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, sf)
         if (moveLast) {
-            lastImages.currentItem = lasts.size
+            val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
+            lastImages.currentItem = categorySet!!.size
         }
     }
 
     fun openCamera(param: LastPicture) {
-        replaceFragment(PreviewFragment.newInstance(param))
-    }
-
-    fun openCamera2(param: LastPicture) {
         val intent = Intent(this, CameraActivity::class.java)
         intent.putExtra("URI", param.strUri)
         intent.putExtra("NAME", param.strName)
         startActivityForResult(intent, 1)
-    }
-
-    fun makeCategoryFolder(strCategoryName: String) {
-        val sdcard: String = Environment.getExternalStorageState()
-        var f: File?
-
-        f = when (sdcard != Environment.MEDIA_MOUNTED) {
-            true -> Environment.getRootDirectory()
-            false -> Environment.getExternalStorageDirectory()
-        }
-
-        val dir: String = f!!.absolutePath + "/$APP_NAME/" + strCategoryName
-
-        f = File(dir)
-        if (!f.exists()) {
-            f.mkdirs()
-        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -185,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //permission from popup granted
                     //pickImageFromGallery()
-                    initCategory(this)
+                    initCategory()
                 } else {
                     //permission from popup denied
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
