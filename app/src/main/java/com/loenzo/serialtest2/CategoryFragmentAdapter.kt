@@ -15,12 +15,12 @@ class CategoryFragmentAdapter(fm: FragmentManager, sf: SharedPreferences) : Frag
         val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
 
         list.clear()
-        for (s in categorySet!!) {
-            val cf = CategoryFragment().apply {
+        for (s in categorySet!!.sorted()) {
+            CategoryFragment().apply {
                 arguments = bundleOf("NAME" to s)
+                Log.i("CategoryFragmentAdapter", "val: ${arguments!!.getString("NAME")}")
+                list.add(this)
             }
-            Log.i("CategoryFragmentAdapter", "TEST: $s")
-            list.add(cf)
         }
     }
 
@@ -30,5 +30,9 @@ class CategoryFragmentAdapter(fm: FragmentManager, sf: SharedPreferences) : Frag
 
     override fun getCount(): Int {
         return list.size
+    }
+
+    override fun getItemPosition(`object`: Any): Int {
+        return POSITION_NONE
     }
 }

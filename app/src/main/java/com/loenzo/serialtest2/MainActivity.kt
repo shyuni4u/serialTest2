@@ -33,8 +33,6 @@ class MainActivity : AppCompatActivity() {
 
         getUsePermission()
 
-        sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
-
         if (checkPermissions().isEmpty()) {
             initCategory()
         }
@@ -72,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initCategory() {
         // read external storage check ... XXX not yet
+        sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
 
         val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
         if (categorySet.isNullOrEmpty() && !categorySet!!.contains("DEFAULT")) {
@@ -99,6 +98,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun makeViewPager(moveLast: Boolean = false) {
+        sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
+
         lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, sf)
         if (moveLast) {
             val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())

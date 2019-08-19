@@ -31,7 +31,7 @@ class CategoryFragment : Fragment () {
         val view = inflater.inflate(R.layout.row_category, container, false)
 
         val argName = arguments!!.getString("NAME")!!
-        Log.i(TAG, "argName : $argName")
+        Log.i(TAG, "val : $argName")
 
         this.argName = argName
 
