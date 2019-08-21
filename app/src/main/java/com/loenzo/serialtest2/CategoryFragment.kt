@@ -1,8 +1,7 @@
 package com.loenzo.serialtest2
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.Context.MODE_PRIVATE
-import android.content.SharedPreferences
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -10,7 +9,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,28 +22,22 @@ class CategoryFragment : Fragment () {
         private const val TAG = "CategoryFrag: "
     }
 
-    private lateinit var sf: SharedPreferences
-    private lateinit var argName: String
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? = inflater.inflate(R.layout.row_category, container, false)
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.row_category, container, false)
-
-        val argName = arguments!!.getString("NAME")!!
-        Log.i(TAG, "val : $argName")
-
-        this.argName = argName
-
-        return view
-    }
-
+    @SuppressLint("InlinedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val imageView: ImageView = view.findViewById(R.id.lastImage)
         val textView: TextView  = view.findViewById(R.id.categoryName)
-
+        val argName = arguments!!.getString("TITLE")!!
         textView.text = argName
 
+        /**
+         * setting folder & image
+         * from argument title info
+         */
         val sdcard: String = Environment.getExternalStorageState()
         var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
             true -> Environment.getRootDirectory()
@@ -70,9 +62,11 @@ class CategoryFragment : Fragment () {
             }
         }
         cursor.close()
-
         imageView.setImageBitmap(bitmap)
 
+        /**
+         * set button click listener
+         */
         val btnAdd: ImageButton = view.findViewById(R.id.btnAdd)
         val btnList: ImageButton = view.findViewById(R.id.btnList)
         val btnCamera: ImageButton = view.findViewById(R.id.btnCamera)
@@ -87,21 +81,7 @@ class CategoryFragment : Fragment () {
             builder.setView(addCategoryName)
             builder.setPositiveButton(resources.getString(R.string.add)
             ) { _, _ -> run {
-                //  make category folder
-                val newName = addCategoryName.text.toString()
-
-                sf = activity!!.getSharedPreferences(APP_NAME, MODE_PRIVATE)
-
-                val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
-                if (!categorySet!!.contains(newName)) {
-                    categorySet.add(newName)
-
-                    sf.edit().apply {
-                        putStringSet("CATEGORY_LIST", categorySet).apply()
-                    }
-
-                    (activity as MainActivity).makeViewPager(true)
-                }
+                (activity as MainActivity).addCategoryFragment(addCategoryName.text.toString())
             } }
             builder.setNegativeButton(resources.getString(R.string.cancel)
             ) { _, _ -> run {} }

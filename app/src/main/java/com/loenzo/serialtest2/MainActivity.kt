@@ -1,17 +1,20 @@
 package com.loenzo.serialtest2
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import kotlinx.android.synthetic.main.content_main.*
-import androidx.fragment.app.Fragment
+import com.google.gson.Gson
+import java.io.File
 import android.Manifest.permission as _permission
+
+
 
 class MainActivity : AppCompatActivity() {
     //  like static
@@ -27,15 +30,15 @@ class MainActivity : AppCompatActivity() {
             _permission.CAMERA)
     }
 
-    private lateinit var sf: SharedPreferences
+    private lateinit var settingFile: File
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.content_main)
 
         getUsePermission()
-
         if (checkPermissions().isEmpty()) {
+            initSettingFile()
             initCategory()
         }
     }
@@ -70,55 +73,61 @@ class MainActivity : AppCompatActivity() {
         return requests
     }
 
+    private fun initSettingFile() {
+        val sdcard: String = Environment.getExternalStorageState()
+        var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+            true -> Environment.getRootDirectory()
+            false -> Environment.getExternalStorageDirectory()
+        }
+        rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
+
+        settingFile = File(rootDir.absolutePath + "/setting.json")
+        if (!settingFile.exists()) {
+            settingFile.writeText(Gson().toJson(listOf(LastPicture("DEFAULT", ""))))
+        }
+    }
+
     private fun initCategory() {
         // read external storage check ... XXX not yet
         lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, makeParamList())
     }
 
     private fun makeParamList() : ArrayList<CategoryFragment> {
-        sf = getSharedPreferences(APP_NAME, MODE_PRIVATE)
-
-        val categorySet = sf.getStringSet("CATEGORY_LIST", HashSet<String>())
-        if (categorySet.isNullOrEmpty() && !categorySet!!.contains("DEFAULT")) {
-            categorySet.add("DEFAULT")
-
-            val editor: SharedPreferences.Editor = sf.edit()
-            //editor.clear()
-            editor.putStringSet("CATEGORY_LIST", categorySet)
-            editor.apply()
-        }
-
+        val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
+        val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
         val list: ArrayList<CategoryFragment> = ArrayList()
 
-        for (s in categorySet.sorted()) {
+        for (categoryInfo in categoryInfoArray) {
             CategoryFragment().apply {
-                arguments = bundleOf("NAME" to s)
+                arguments = bundleOf("TITLE" to categoryInfo.title)
                 list.add(this)
             }
         }
         return list
     }
 
-    private fun replaceFragment(fragment: Fragment) {
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.fragmentContainer, fragment)
-        fragmentTransaction.commit()
-    }
+    /**
+     * add category
+     * save refreshed info to setting.json
+     */
+    fun addCategoryFragment(newName: String) {
+        val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
+        val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
+        val list: ArrayList<LastPicture> = categoryInfoArray.toCollection(ArrayList())
+        list.add(LastPicture(newName, ""))
 
-    private fun addFragment(fragment: Fragment) {
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.add(R.id.fragmentContainer, fragment)
-        fragmentTransaction.commit()
-    }
+        settingFile.writeText(Gson().toJson(list))
 
-    fun makeViewPager(moveLast: Boolean = false) {
-        (lastImages.adapter as CategoryFragmentAdapter).setList(makeParamList())
+        (lastImages.adapter as CategoryFragmentAdapter).addItem(CategoryFragment().apply {
+            arguments = bundleOf("TITLE" to newName)
+        })
+        lastImages.currentItem = (lastImages.adapter as CategoryFragmentAdapter).count
     }
 
     fun openCamera(param: LastPicture) {
         val intent = Intent(this, CameraActivity::class.java)
-        intent.putExtra("URI", param.strUri)
-        intent.putExtra("NAME", param.strName)
+        //intent.putExtra("URI", param.strUri)
+        //intent.putExtra("NAME", param.strName)
         startActivityForResult(intent, 1)
     }
 

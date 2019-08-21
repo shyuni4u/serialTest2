@@ -7,7 +7,6 @@ import androidx.fragment.app.FragmentPagerAdapter
 class CategoryFragmentAdapter(fm: FragmentManager, list: ArrayList<CategoryFragment>) : FragmentPagerAdapter(fm) {
 
     private val mList: ArrayList<CategoryFragment> = list
-    private val mFm: FragmentManager = fm
 
     override fun getItem(position: Int): Fragment {
         return mList[position]
@@ -21,9 +20,8 @@ class CategoryFragmentAdapter(fm: FragmentManager, list: ArrayList<CategoryFragm
         return POSITION_NONE
     }
 
-    fun setList(newList: ArrayList<CategoryFragment>) {
-        mList.clear()
-        mList.addAll(newList)
+    fun addItem(newItem: CategoryFragment) {
+        mList.add(newItem)
         notifyDataSetChanged()
     }
 }

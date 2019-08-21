@@ -18,4 +18,4 @@
 
 package com.loenzo.serialtest2
 
-@JvmField val APP_NAME = "MEMORIA"
+const val APP_NAME = "MEMORIA"
