@@ -672,7 +672,7 @@ class CameraActivity : AppCompatActivity () {
                 abortCaptures()
                 capture(captureBuilder!!.build(), captureCallback, null)
             }
-        } catch (e: CameraAccessException) {
+        } catch (e: Exception) {
             Log.e(TAG, e.toString())
         }
 
@@ -708,6 +708,32 @@ class CameraActivity : AppCompatActivity () {
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
         }
     }
+//
+//    private fun setCameraDisplayOrientation(
+//        activity: Activity,
+//        cameraId: Int, camera: Camera2
+//    ) {
+//        var info = android.hardware.Camera.CameraInfo()
+//        android.hardware.Camera.getCameraInfo(cameraId, info)
+//        var rotation = activity.getWindowManager().getDefaultDisplay()
+//            .getRotation()
+//        var degrees = 0
+//        when (rotation) {
+//            Surface.ROTATION_0 -> degrees = 0
+//            Surface.ROTATION_90 -> degrees = 90
+//            Surface.ROTATION_180 -> degrees = 180
+//            Surface.ROTATION_270 -> degrees = 270
+//        }
+//
+//        var result = 0
+//        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+//            result = (info.orientation + degrees) % 360
+//            result = (360 - result) % 360  // compensate the mirror
+//        } else {  // back-facing
+//            result = (info.orientation - degrees + 360) % 360
+//        }
+//        camera.setDisplayOrientation(result)
+//    }
 
     companion object {
 
