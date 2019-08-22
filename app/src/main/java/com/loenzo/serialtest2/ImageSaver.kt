@@ -61,10 +61,9 @@ internal class ImageSaver(
                 data = Uri.fromFile(file)
             }
             context.sendBroadcast(intent)
-
+            imageView!!.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null))
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }
-        imageView!!.setImageBitmap(BitmapFactory.decodeFile(file.absolutePath))
     }
 
     companion object {

@@ -643,9 +643,14 @@ class CameraActivity : AppCompatActivity () {
                 // We have to take that into account and rotate JPEG properly.
                 // For devices with orientation of 90, we return our mapping from ORIENTATIONS.
                 // For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
+                /*
                 set(
                     CaptureRequest.JPEG_ORIENTATION,
                     (ORIENTATIONS.get(rotation) + sensorOrientation + 270) % 360)
+                 */
+                set(
+                    CaptureRequest.JPEG_ORIENTATION,
+                    sensorOrientation)
 
                 // Use the same AE and AF modes as the preview.
                 set(

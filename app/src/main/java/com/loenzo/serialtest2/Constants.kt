@@ -51,7 +51,7 @@ fun getRecentFileFromCategoryName (paramName: String, context: Context): Bitmap?
     val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
 
     val bitmap: Bitmap = when (cursor!!.count == 0) {
-        true -> BitmapFactory.decodeResource(context.resources, R.drawable.need_picture)
+        true -> BitmapFactory.decodeStream(context.resources.assets.open("blank_canvas.png"))
         false -> {
             cursor.moveToNext()
             BitmapFactory.decodeFile(cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA)))
