@@ -3,13 +3,11 @@ package com.loenzo.serialtest2
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.*
 import android.hardware.camera2.*
 import android.media.ImageReader
-import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.util.Size
@@ -181,7 +179,7 @@ class CameraActivity : AppCompatActivity () {
         val sdf = SimpleDateFormat("yyyyMddhhmmss")
         val currentDate = sdf.format(Date())
         file = File(FILE_PATH, mTitle + "_$currentDate.jpg")
-        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this))
+        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent)))
     }
 
     /**

@@ -2,11 +2,12 @@ package com.loenzo.serialtest2
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.media.Image
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-
+import android.widget.ImageView
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -28,7 +29,12 @@ internal class ImageSaver(
     /**
      * For sendBroadcast
      */
-    private val context: Context
+    private val context: Context,
+
+    /**
+     * PreviewImage: show image after image save
+     */
+    private val imageView: ImageView?
 ) : Runnable {
 
     override fun run() {
@@ -55,8 +61,10 @@ internal class ImageSaver(
                 data = Uri.fromFile(file)
             }
             context.sendBroadcast(intent)
+
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }
+        imageView!!.setImageBitmap(BitmapFactory.decodeFile(file.absolutePath))
     }
 
     companion object {
