@@ -82,6 +82,11 @@ class CameraActivity : AppCompatActivity () {
         }
     }
 
+    override fun onDestroy() {
+        closeCamera()
+        super.onDestroy()
+    }
+
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
      * [TextureView].

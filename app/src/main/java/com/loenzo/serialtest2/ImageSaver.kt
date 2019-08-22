@@ -63,12 +63,9 @@ internal class ImageSaver(
                 data = Uri.fromFile(file)
             }
             context.sendBroadcast(intent)
-
-            // TODO : modify this code or structure
             Handler(Looper.getMainLooper()).post {
                 imageView!!.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null))
             }
-
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }
     }
