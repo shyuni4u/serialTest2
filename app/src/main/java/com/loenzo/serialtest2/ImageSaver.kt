@@ -5,6 +5,8 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.Image
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import android.widget.ImageView
@@ -61,7 +63,12 @@ internal class ImageSaver(
                 data = Uri.fromFile(file)
             }
             context.sendBroadcast(intent)
-            imageView!!.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null))
+
+            // TODO : modify this code or structure
+            Handler(Looper.getMainLooper()).post {
+                imageView!!.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null))
+            }
+
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }
     }
