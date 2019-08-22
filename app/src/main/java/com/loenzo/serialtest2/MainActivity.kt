@@ -14,8 +14,6 @@ import com.google.gson.Gson
 import java.io.File
 import android.Manifest.permission as _permission
 
-
-
 class MainActivity : AppCompatActivity() {
     //  like static
     companion object {
@@ -23,6 +21,7 @@ class MainActivity : AppCompatActivity() {
 
         // Permission code
         private const val PERMISSION_CODE = 1000
+        private const val CAMERA_ACTIVITY_SUCCESS = 1
 
         private val permissionsRequired = arrayOf(
             _permission.WRITE_EXTERNAL_STORAGE,
@@ -35,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.content_main)
+        Log.i(TAG, "Call onCreate")
 
         getUsePermission()
         if (checkPermissions().isEmpty()) {
@@ -80,6 +80,9 @@ class MainActivity : AppCompatActivity() {
             false -> Environment.getExternalStorageDirectory()
         }
         rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
+        if (!rootDir.exists()) {
+            rootDir.mkdirs()
+        }
 
         settingFile = File(rootDir.absolutePath + "/setting.json")
         if (!settingFile.exists()) {
@@ -124,11 +127,10 @@ class MainActivity : AppCompatActivity() {
         lastImages.currentItem = (lastImages.adapter as CategoryFragmentAdapter).count
     }
 
-    fun openCamera(param: LastPicture) {
+    fun openCamera(categoryName: String) {
         val intent = Intent(this, CameraActivity::class.java)
-        //intent.putExtra("URI", param.strUri)
-        //intent.putExtra("NAME", param.strName)
-        startActivityForResult(intent, 1)
+        intent.putExtra("TITLE", categoryName)
+        startActivityForResult(intent, CAMERA_ACTIVITY_SUCCESS)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -137,6 +139,7 @@ class MainActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //permission from popup granted
                     //pickImageFromGallery()
+                    initSettingFile()
                     initCategory()
                 } else {
                     //permission from popup denied
@@ -145,7 +148,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
 }
 
 /**

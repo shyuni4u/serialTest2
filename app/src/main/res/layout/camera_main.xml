@@ -1,59 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:orientation="horizontal"
-             android:layout_width="fill_parent"
-             android:layout_height="fill_parent">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@color/black">
 
     <com.loenzo.serialtest2.AutoFitTextureView
             android:id="@+id/textureView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-    <FrameLayout
-            android:layout_width="30dp"
-            android:layout_height="300dp"
-            android:layout_gravity="end|center_vertical">
+    <ImageView
+            android:id="@+id/imgBack"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/none" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="30dp"
+            android:layout_height="200dp"
+            android:layout_marginEnd="8dp"
+            android:layout_gravity="end|center_vertical">
+        <!--
+        <ImageButton
+                android:id="@+id/imgTransparency"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/transparency"
+                android:contentDescription="@string/none"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintBottom_toBottomOf="@+id/barAlpha"/>
+                -->
         <androidx.appcompat.widget.AppCompatSeekBar
                 android:id="@+id/barAlpha"
-                android:layout_width="300dp"
+                android:layout_width="200dp"
                 android:layout_height="30dp"
                 android:layout_gravity="center"
                 android:rotation="270"
                 android:progress="100"
-                android:secondaryProgress="70"/>
-    </FrameLayout>
+                android:thumb="@drawable/seekbar_thumb"
+                android:progressDrawable="@drawable/seekbar_bar"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center|bottom">
-        <Button
-                android:text="일반"
-                android:id="@+id/normal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="?android:attr/borderlessButtonStyle"/>
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:paddingBottom="20dp">
 
-        <Button
-                android:text="광각"
-                android:id="@+id/wide"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="?android:attr/borderlessButtonStyle"/>
-
-        <Button
-                android:text="촬영"
-                android:id="@+id/capture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="?android:attr/borderlessButtonStyle"/>
+        <com.loenzo.serialtest2.CircularImageView
+                android:id="@+id/imgRecent"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:scaleType="centerCrop"
+                android:layout_marginEnd="20dp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="@+id/btnCapture"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:contentDescription="@string/capture"/>
 
         <Button
-                android:text="전환"
-                android:id="@+id/change"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="?android:attr/borderlessButtonStyle"/>
-    </LinearLayout>
+                android:id="@+id/btnCapture"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/btn_camera"
+                android:layout_gravity="center|center_vertical"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <ImageButton
+                android:id="@+id/btnChange"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="20dp"
+                android:background="@drawable/switch_camera"
+                android:contentDescription="@string/change"
+                app:layout_constraintLeft_toLeftOf="@+id/btnCapture"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

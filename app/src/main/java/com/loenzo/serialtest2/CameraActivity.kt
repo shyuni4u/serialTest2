@@ -16,8 +16,7 @@ import android.util.Size
 import android.util.SparseIntArray
 import android.view.Surface
 import android.view.TextureView
-import android.widget.Button
-import android.widget.Toast
+import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -37,15 +36,35 @@ class CameraActivity : AppCompatActivity () {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.camera_main)
 
-        uri = intent.getStringExtra("URI")
-        name = intent.getStringExtra("NAME")
+        mTitle = intent.getStringExtra("TITLE")
 
         textureView = this.findViewById(R.id.textureView)
 
-        val btnNormal: Button = this.findViewById(R.id.normal)
-        val btnWide: Button = this.findViewById(R.id.wide)
-        val btnCapture: Button = this.findViewById(R.id.capture)
-        val btnChange: Button = this.findViewById(R.id.change)
+        val sdcard: String = Environment.getExternalStorageState()
+        val f = when (sdcard != Environment.MEDIA_MOUNTED) {
+            true -> Environment.getRootDirectory()
+            false -> Environment.getExternalStorageDirectory()
+        }
+        FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + mTitle
+
+        val imgBack: ImageView = this.findViewById(R.id.imgBack)
+        val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
+        val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
+        val btnCapture: Button = this.findViewById(R.id.btnCapture)
+        val btnChange: ImageButton = this.findViewById(R.id.btnChange)
+
+        imgBack.setImageBitmap(getRecentFileFromCategoryName(mTitle, this))
+        imgBack.alpha = 0.4F
+
+        barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
+                imgBack.alpha = (i * 0.01).toFloat()
+            }
+        })
+
+        imgRecent.setImageBitmap(getRecentFileFromCategoryName(mTitle, this))
 
         btnCapture.setOnClickListener {
             lockFocus()
@@ -54,49 +73,15 @@ class CameraActivity : AppCompatActivity () {
         btnChange.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
-                lensFacing = 1 - lensFacing
+                lensFacing = when (lensFacing == CameraCharacteristics.LENS_FACING_BACK) {
+                    true -> CameraCharacteristics.LENS_FACING_FRONT
+                    false -> CameraCharacteristics.LENS_FACING_BACK
+                }
                 openCamera(textureView.width, textureView.height)
             } else {
                 textureView.surfaceTextureListener = surfaceTextureListener
             }
         }
-
-        val sdcard: String = Environment.getExternalStorageState()
-        val f: File?
-
-        f = when (sdcard != Environment.MEDIA_MOUNTED) {
-            true -> Environment.getRootDirectory()
-            false -> Environment.getExternalStorageDirectory()
-        }
-
-        FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + name
-
-        /*
-        btnChange.setOnClickListener {
-        Log.i(TAG, "CHANGE BUTTON")
-        }
-
-        barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-        override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
-        imgBack.alpha = (i * 0.01).toFloat()
-        }
-
-        override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-        override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-
-        })
-
-        btnCapture.setOnClickListener {
-        lockFocus()
-        }
-
-        if (arguments?.getString(STR_URI) != "@@EMPTY@@") {
-        val bitmap: Bitmap = BitmapFactory.decodeFile(arguments?.getString(STR_URI))
-        imgBack.setImageBitmap(bitmap)
-        imgBack.alpha = 0.4F
-        }
-         */
     }
 
     /**
@@ -104,7 +89,6 @@ class CameraActivity : AppCompatActivity () {
      * [TextureView].
      */
     private val surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-
         @RequiresApi(Build.VERSION_CODES.M)
         override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
             openCamera(width, height)
@@ -117,7 +101,6 @@ class CameraActivity : AppCompatActivity () {
         override fun onSurfaceTextureDestroyed(texture: SurfaceTexture) = true
 
         override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
-
     }
 
     /**
@@ -197,14 +180,8 @@ class CameraActivity : AppCompatActivity () {
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
         val sdf = SimpleDateFormat("yyyyMddhhmmss")
         val currentDate = sdf.format(Date())
-        file = File(FILE_PATH, name + "_$currentDate.jpg")
-        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file))
-        val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
-            data = Uri.fromFile(file)
-        }
-        this@CameraActivity.sendBroadcast(intent)
-
-        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+        file = File(FILE_PATH, mTitle + "_$currentDate.jpg")
+        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this))
     }
 
     /**
@@ -748,12 +725,10 @@ class CameraActivity : AppCompatActivity () {
          * Tag for the [Log].
          */
         private const val TAG = "CameraActivity"
-        private const val APP_NAME = "MEMORIA"
 
         private lateinit var FILE_PATH: String
 
-        private lateinit var uri: String
-        private lateinit var name: String
+        private lateinit var mTitle: String
 
         /**
          * Camera state: Showing camera preview.

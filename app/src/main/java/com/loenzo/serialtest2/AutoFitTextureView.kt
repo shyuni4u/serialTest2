@@ -42,7 +42,7 @@ class AutoFitTextureView @JvmOverloads constructor(
      */
     fun setAspectRatio(width: Int, height: Int) {
         if (width < 0 || height < 0) {
-            throw IllegalArgumentException("Size cannot be negative.") as Throwable
+            throw IllegalArgumentException("Size cannot be negative.")
         }
         ratioWidth = width
         ratioHeight = height

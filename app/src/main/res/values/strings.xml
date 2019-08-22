@@ -7,6 +7,8 @@
     <string name="cancel">Cancel</string>
     <string name="option">Option</string>
     <string name="capture">Capture</string>
+    <string name="camera">Camera</string>
+    <string name="video">Video</string>
     <string name="change">Change</string>
     <string name="none"> </string>
 </resources>
