@@ -53,11 +53,7 @@ class MainActivity : AppCompatActivity() {
                 //show popup to request runtime permission
                 val arr = arrayOfNulls<String>(requests.size)
                 requestPermissions(requests.toArray(arr), PERMISSION_CODE)
-            } else {
-                //permission already granted
             }
-        } else {
-            //permission already granted
         }
     }
 

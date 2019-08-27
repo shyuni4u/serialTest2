@@ -45,20 +45,20 @@ class CameraActivity : AppCompatActivity () {
         }
         FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + mTitle
 
-        val imgBack: ImageView = this.findViewById(R.id.imgBack)
+        imgBackground = this.findViewById(R.id.imgBack)
         val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
         val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        imgBack.setImageBitmap(getRecentFileFromCategoryName(mTitle, this))
-        imgBack.alpha = 0.4F
+        imgBackground.setImageBitmap(getRecentFileFromCategoryName(mTitle, this))
+        imgBackground.alpha = 0.4F
 
         barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
-                imgBack.alpha = (i * 0.01).toFloat()
+                imgBackground.alpha = (i * 0.01).toFloat()
             }
         })
 
@@ -115,6 +115,11 @@ class CameraActivity : AppCompatActivity () {
      * An [AutoFitTextureView] for camera preview.
      */
     private lateinit var textureView: AutoFitTextureView
+
+    /**
+     * An [ImageView] for background
+     */
+    private lateinit var imgBackground: AutoFitImageView
 
     /**
      * A [CameraCaptureSession] for camera preview.
@@ -347,6 +352,7 @@ class CameraActivity : AppCompatActivity () {
                 val map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
 
+                // XXX: image size
                 // For still image captures, we use the largest available size.
                 val largest = Collections.max(
                     listOf(*map.getOutputSizes(ImageFormat.JPEG)),
@@ -360,6 +366,7 @@ class CameraActivity : AppCompatActivity () {
                 // coordinate.
                 val displayRotation = this.windowManager.defaultDisplay.rotation
 
+                // XXX: image rotation
                 sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)!!
                 val swappedDimensions = areDimensionsSwapped(displayRotation)
 
@@ -384,8 +391,10 @@ class CameraActivity : AppCompatActivity () {
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     textureView.setAspectRatio(previewSize.width, previewSize.height)
+                    imgBackground.setAspectRatio(previewSize.width, previewSize.height)
                 } else {
                     textureView.setAspectRatio(previewSize.height, previewSize.width)
+                    imgBackground.setAspectRatio(previewSize.height, previewSize.width)
                 }
 
                 // Check if the flash is supported.
@@ -467,11 +476,11 @@ class CameraActivity : AppCompatActivity () {
     private fun closeCamera() {
         try {
             cameraOpenCloseLock.acquire()
-            captureSession!!.close()
+            captureSession?.close()
             captureSession = null
-            cameraDevice!!.close()
+            cameraDevice?.close()
             cameraDevice = null
-            imageReader!!.close()
+            imageReader?.close()
             imageReader = null
         } catch (e: InterruptedException) {
             throw RuntimeException("Interrupted while trying to lock camera closing.", e)
@@ -648,14 +657,9 @@ class CameraActivity : AppCompatActivity () {
                 // We have to take that into account and rotate JPEG properly.
                 // For devices with orientation of 90, we return our mapping from ORIENTATIONS.
                 // For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
-                /*
                 set(
                     CaptureRequest.JPEG_ORIENTATION,
                     (ORIENTATIONS.get(rotation) + sensorOrientation + 270) % 360)
-                 */
-                set(
-                    CaptureRequest.JPEG_ORIENTATION,
-                    sensorOrientation)
 
                 // Use the same AE and AF modes as the preview.
                 set(

@@ -15,6 +15,13 @@ class CategoryFragment : Fragment () {
         private const val TAG = "CategoryFrag: "
     }
 
+    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
+        if (isVisibleToUser) {
+
+        }
+        super.setUserVisibleHint(isVisibleToUser)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.row_category, container, false)
 

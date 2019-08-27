@@ -11,10 +11,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-    <ImageView
+    <com.loenzo.serialtest2.AutoFitImageView
             android:id="@+id/imgBack"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/white_85"
             android:contentDescription="@string/none" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -40,7 +41,9 @@
                 android:layout_height="30dp"
                 android:layout_gravity="center"
                 android:rotation="270"
-                android:progress="100"
+                android:max="100"
+                android:min="0"
+                android:progress="40"
                 android:thumb="@drawable/seekbar_thumb"
                 android:progressDrawable="@drawable/seekbar_bar"
                 app:layout_constraintLeft_toLeftOf="parent"

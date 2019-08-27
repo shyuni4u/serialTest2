@@ -3,6 +3,7 @@ package com.loenzo.serialtest2
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.media.ExifInterface
 import android.media.Image
 import android.net.Uri
 import android.os.Handler
@@ -64,7 +65,16 @@ internal class ImageSaver(
             }
             context.sendBroadcast(intent)
             Handler(Looper.getMainLooper()).post {
-                imageView!!.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null))
+                //TODO: do something
+
+                val exif = ExifInterface(file.absolutePath)
+                val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                    ExifInterface.ORIENTATION_ROTATE_180-> 180
+                    ExifInterface.ORIENTATION_ROTATE_90-> 90
+                    else -> 0
+                }
+                imageView!!.setImageBitmap(getRotateBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null), rotate))
             }
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }

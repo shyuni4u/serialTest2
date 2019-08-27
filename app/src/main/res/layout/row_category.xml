@@ -22,7 +22,7 @@
                 android:id="@+id/transparent_background"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/black_50"
+                android:background="@color/black_70"
                 android:scaleType="centerCrop"
                 android:contentDescription="@string/none"
                 app:layout_constraintLeft_toLeftOf="parent"

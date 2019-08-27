@@ -22,9 +22,12 @@ import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.core.graphics.scale
 import java.io.File
 
 const val APP_NAME = "MEMORIA"
@@ -54,9 +57,39 @@ fun getRecentFileFromCategoryName (paramName: String, context: Context): Bitmap?
         true -> BitmapFactory.decodeStream(context.resources.assets.open("blank_canvas.png"))
         false -> {
             cursor.moveToNext()
-            BitmapFactory.decodeFile(cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA)))
+            val path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+            val exif = ExifInterface(path)
+            val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                ExifInterface.ORIENTATION_ROTATE_180-> 180
+                ExifInterface.ORIENTATION_ROTATE_90-> 90
+                else -> 0
+            }
+            getRotateBitmap(BitmapFactory.decodeFile(path), rotate)
         }
     }
     cursor.close()
     return bitmap
+}
+
+/**
+ * rotate bitmap if some device
+ */
+fun getRotateBitmap(bitmap: Bitmap, degree: Int): Bitmap {
+    val maxSize = when (bitmap.width > bitmap.height) {
+        true -> bitmap.width
+        false -> bitmap.height
+    }
+    val degreeSize = when {
+        maxSize > 2000 -> 5
+        maxSize > 1000 -> 2
+        else -> 1
+    }
+    val scaledBitmap = bitmap.scale(bitmap.width / degreeSize, bitmap.height / degreeSize, true)
+    if (degree == 0) return scaledBitmap
+
+    val m = Matrix()
+    m.setRotate(degree.toFloat(), (scaledBitmap.width / 2).toFloat(), (scaledBitmap.height / 2).toFloat())
+
+    return Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.width, scaledBitmap.height, m, true)
 }
