@@ -8,7 +8,7 @@ class LastPicture : Serializable {
     var uri: String?
     var option: String?
     var camera_flash: Boolean?
-    var camera_direction: Int?
+    var camera_direction: Int
     var camera_alpha: Float
     var camera_ratio: Int?
 

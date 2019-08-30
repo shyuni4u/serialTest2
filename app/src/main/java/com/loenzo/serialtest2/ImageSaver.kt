@@ -44,6 +44,7 @@ internal class ImageSaver(
         val buffer = image.planes[0].buffer
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
+
         var output: FileOutputStream? = null
         try {
             output = FileOutputStream(file).apply {

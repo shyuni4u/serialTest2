@@ -171,7 +171,6 @@ class MainActivity : AppCompatActivity() {
                     if (info.title == resultObject.title)   info.copy(resultObject)
                 }
 
-                Log.i(TAG, Gson().toJson(categoryInfoArray))
                 settingFile.writeText(Gson().toJson(categoryInfoArray))
             }
         }

@@ -222,7 +222,9 @@ class CameraActivity : AppCompatActivity () {
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
         val sdf = SimpleDateFormat("yyyyMddhhmmss")
         val currentDate = sdf.format(Date())
+
         file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")
+
         backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent)))
     }
 
@@ -533,7 +535,7 @@ class CameraActivity : AppCompatActivity () {
      * Stops the background thread and its [Handler].
      */
     private fun stopBackgroundThread() {
-        backgroundThread!!.quitSafely()
+        backgroundThread?.quitSafely()
         try {
             backgroundThread!!.join()
             backgroundThread = null
