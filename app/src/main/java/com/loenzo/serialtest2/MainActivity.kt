@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
+import android.view.Gravity
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import kotlinx.android.synthetic.main.content_main.*
@@ -18,10 +19,6 @@ class MainActivity : AppCompatActivity() {
     //  like static
     companion object {
         private const val TAG = "MainActivity: "
-
-        // Permission code
-        private const val PERMISSION_CODE = 1000
-        private const val CAMERA_ACTIVITY_SUCCESS = 1
 
         private val permissionsRequired = arrayOf(
             _permission.WRITE_EXTERNAL_STORAGE,
@@ -97,8 +94,9 @@ class MainActivity : AppCompatActivity() {
         val list: ArrayList<CategoryFragment> = ArrayList()
 
         for (categoryInfo in categoryInfoArray) {
+            //  setting array list for CategoryFragment
             CategoryFragment().apply {
-                arguments = bundleOf("TITLE" to categoryInfo.title)
+                arguments = bundleOf("PARAM" to categoryInfo)
                 list.add(this)
             }
         }
@@ -112,20 +110,31 @@ class MainActivity : AppCompatActivity() {
     fun addCategoryFragment(newName: String) {
         val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
         val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
+
+        // check newName exists
+        for (info in categoryInfoArray) {
+            if (info.title == newName) {
+                Toast.makeText(this, resources.getString(R.string.duplicate_name), Toast.LENGTH_SHORT).apply {
+                    setGravity(Gravity.BOTTOM, 0, 100)
+                }.show()
+                return
+            }
+        }
+
         val list: ArrayList<LastPicture> = categoryInfoArray.toCollection(ArrayList())
         list.add(LastPicture(newName, ""))
 
         settingFile.writeText(Gson().toJson(list))
 
         (lastImages.adapter as CategoryFragmentAdapter).addItem(CategoryFragment().apply {
-            arguments = bundleOf("TITLE" to newName)
+            arguments = bundleOf("PARAM" to LastPicture(newName, ""))
         })
         lastImages.currentItem = (lastImages.adapter as CategoryFragmentAdapter).count
     }
 
-    fun openCamera(categoryName: String) {
+    fun openCamera(categoryInfo: LastPicture) {
         val intent = Intent(this, CameraActivity::class.java)
-        intent.putExtra("TITLE", categoryName)
+        intent.putExtra("PARAM", categoryInfo)
         startActivityForResult(intent, CAMERA_ACTIVITY_SUCCESS)
     }
 
@@ -139,8 +148,31 @@ class MainActivity : AppCompatActivity() {
                     initCategory()
                 } else {
                     //permission from popup denied
-                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).apply {
+                        setGravity(Gravity.BOTTOM, 0, 100)
+                    }.show()
                 }
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == RESULT_FIRST_USER) {
+            if (resultCode == CAMERA_ACTIVITY_SUCCESS) {
+                val resultObject = data!!.getSerializableExtra("RESULT_PARAM") as LastPicture
+
+                val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
+                val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
+
+                // find title
+                for (info in categoryInfoArray) {
+                    if (info.title == resultObject.title)   info.copy(resultObject)
+                }
+
+                Log.i(TAG, Gson().toJson(categoryInfoArray))
+                settingFile.writeText(Gson().toJson(categoryInfoArray))
             }
         }
     }

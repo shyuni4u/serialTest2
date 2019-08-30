@@ -3,6 +3,7 @@ package com.loenzo.serialtest2
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.*
@@ -28,13 +29,12 @@ import kotlin.math.max
 
 class CameraActivity : AppCompatActivity () {
 
-    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.camera_main)
 
-        mTitle = intent.getStringExtra("TITLE")
+        mObject = intent.getSerializableExtra("PARAM") as LastPicture
 
         textureView = this.findViewById(R.id.textureView)
 
@@ -43,26 +43,52 @@ class CameraActivity : AppCompatActivity () {
             true -> Environment.getRootDirectory()
             false -> Environment.getExternalStorageDirectory()
         }
-        FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + mTitle
+        FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + mObject.title
 
         imgBackground = this.findViewById(R.id.imgBack)
+        val btnFlash: ImageButton = this.findViewById(R.id.btnFlash)
         val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
         val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        imgBackground.setImageBitmap(getRecentFileFromCategoryName(mTitle, this))
-        imgBackground.alpha = 0.4F
+        imgBackground.setImageBitmap(getRecentFileFromCategoryName(mObject.title, this))
+        imgBackground.alpha = mObject.camera_alpha
 
+        when(mObject.camera_flash == true) {
+            true -> btnFlash.setBackgroundResource(R.drawable.flash)
+            false -> btnFlash.setBackgroundResource(R.drawable.flash_off)
+        }
+        btnFlash.setOnClickListener {
+            closeCamera()
+            if (textureView.isAvailable) {
+                mObject.camera_flash = when(mObject.camera_flash == true) {
+                    true -> {
+                        it.setBackgroundResource(R.drawable.flash_off)
+                        false
+                    }
+                    false -> {
+                        it.setBackgroundResource(R.drawable.flash)
+                        true
+                    }
+                }
+                openCamera(textureView.width, textureView.height)
+            } else {
+                textureView.surfaceTextureListener = surfaceTextureListener
+            }
+        }
+
+        barAlpha.progress = (mObject.camera_alpha * 100).toInt()
         barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
                 imgBackground.alpha = (i * 0.01).toFloat()
+                mObject.camera_alpha = (i * 0.01).toFloat()
             }
         })
 
-        imgRecent.setImageBitmap(getRecentFileFromCategoryName(mTitle, this))
+        imgRecent.setImageBitmap(getRecentFileFromCategoryName(mObject.title,this, true))
 
         btnCapture.setOnClickListener {
             lockFocus()
@@ -71,7 +97,7 @@ class CameraActivity : AppCompatActivity () {
         btnChange.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
-                lensFacing = when (lensFacing == CameraCharacteristics.LENS_FACING_BACK) {
+                mObject.camera_direction = when (mObject.camera_direction == CameraCharacteristics.LENS_FACING_BACK) {
                     true -> CameraCharacteristics.LENS_FACING_FRONT
                     false -> CameraCharacteristics.LENS_FACING_BACK
                 }
@@ -80,6 +106,14 @@ class CameraActivity : AppCompatActivity () {
                 textureView.surfaceTextureListener = surfaceTextureListener
             }
         }
+    }
+
+    override fun onBackPressed() {
+        val intent = Intent().apply {
+            putExtra("RESULT_PARAM", mObject)
+        }
+        setResult(CAMERA_ACTIVITY_SUCCESS, intent)
+        super.onBackPressed()
     }
 
     override fun onDestroy() {
@@ -188,7 +222,7 @@ class CameraActivity : AppCompatActivity () {
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
         val sdf = SimpleDateFormat("yyyyMddhhmmss")
         val currentDate = sdf.format(Date())
-        file = File(FILE_PATH, mTitle + "_$currentDate.jpg")
+        file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")
         backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent)))
     }
 
@@ -223,8 +257,6 @@ class CameraActivity : AppCompatActivity () {
      * Orientation of the camera sensor
      */
     private var sensorOrientation = 0
-
-    private var lensFacing = CameraCharacteristics.LENS_FACING_BACK
 
     /**
      * A [CameraCaptureSession.CaptureCallback] that handles events related to JPEG capture.
@@ -345,7 +377,7 @@ class CameraActivity : AppCompatActivity () {
 
                 // We don't use a front facing camera in this sample.
                 val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (cameraDirection != null && cameraDirection != lensFacing) {
+                if (cameraDirection != null && cameraDirection != mObject.camera_direction) {
                     continue
                 }
 
@@ -711,7 +743,7 @@ class CameraActivity : AppCompatActivity () {
     }
 
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder) {
-        if (flashSupported) {
+        if (flashSupported && mObject.camera_flash == true) {
             requestBuilder.set(
                 CaptureRequest.CONTROL_AE_MODE,
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
@@ -740,7 +772,7 @@ class CameraActivity : AppCompatActivity () {
 
         private lateinit var FILE_PATH: String
 
-        private lateinit var mTitle: String
+        private lateinit var mObject: LastPicture
 
         /**
          * Camera state: Showing camera preview.

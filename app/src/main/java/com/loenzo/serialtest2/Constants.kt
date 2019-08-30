@@ -32,11 +32,15 @@ import java.io.File
 
 const val APP_NAME = "MEMORIA"
 
+// Permission code
+const val PERMISSION_CODE = 1000
+const val CAMERA_ACTIVITY_SUCCESS = 1
+
 /**
  * setting folder & image
  * from argument title info
  */
-fun getRecentFileFromCategoryName (paramName: String, context: Context): Bitmap? {
+fun getRecentFileFromCategoryName (paramName: String, context: Context, useScale: Boolean = false): Bitmap? {
     val sdcard: String = Environment.getExternalStorageState()
     var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
         true -> Environment.getRootDirectory()
@@ -65,7 +69,7 @@ fun getRecentFileFromCategoryName (paramName: String, context: Context): Bitmap?
                 ExifInterface.ORIENTATION_ROTATE_90-> 90
                 else -> 0
             }
-            getRotateBitmap(BitmapFactory.decodeFile(path), rotate)
+            getRotateBitmap(BitmapFactory.decodeFile(path), rotate, useScale)
         }
     }
     cursor.close()
@@ -75,16 +79,21 @@ fun getRecentFileFromCategoryName (paramName: String, context: Context): Bitmap?
 /**
  * rotate bitmap if some device
  */
-fun getRotateBitmap(bitmap: Bitmap, degree: Int): Bitmap {
+fun getRotateBitmap(bitmap: Bitmap, degree: Int, useScale: Boolean): Bitmap {
     val maxSize = when (bitmap.width > bitmap.height) {
         true -> bitmap.width
         false -> bitmap.height
     }
-    val degreeSize = when {
-        maxSize > 2000 -> 5
-        maxSize > 1000 -> 2
+    var degreeSize = when {
+        maxSize > 2000 -> 2
+        //maxSize > 1000 -> 2
         else -> 1
     }
+
+    if (useScale) {
+        degreeSize = 1
+    }
+
     val scaledBitmap = bitmap.scale(bitmap.width / degreeSize, bitmap.height / degreeSize, true)
     if (degree == 0) return scaledBitmap
 

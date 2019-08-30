@@ -74,7 +74,7 @@ internal class ImageSaver(
                     ExifInterface.ORIENTATION_ROTATE_90-> 90
                     else -> 0
                 }
-                imageView!!.setImageBitmap(getRotateBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null), rotate))
+                imageView!!.setImageBitmap(getRotateBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null), rotate, true))
             }
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }

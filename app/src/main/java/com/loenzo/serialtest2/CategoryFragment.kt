@@ -8,19 +8,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import java.util.*
 
-class CategoryFragment : Fragment () {
+@Suppress("CAST_NEVER_SUCCEEDS")
+class CategoryFragment : Fragment() {
 
     companion object {
         private const val TAG = "CategoryFrag: "
     }
 
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        if (isVisibleToUser) {
-
-        }
-        super.setUserVisibleHint(isVisibleToUser)
-    }
+    private lateinit var imageView: ImageView
+    private lateinit var argObject: LastPicture
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.row_category, container, false)
@@ -29,12 +27,12 @@ class CategoryFragment : Fragment () {
         super.onViewCreated(view, savedInstanceState)
         Log.i(TAG, "Call onViewCreated")
 
-        val imageView: ImageView = view.findViewById(R.id.lastImage)
         val textView: TextView  = view.findViewById(R.id.categoryName)
-        val argName = arguments!!.getString("TITLE")!!
-        textView.text = argName
+        imageView = view.findViewById(R.id.lastImage)
+        argObject = arguments!!.get("PARAM") as LastPicture
+        textView.text = argObject.title
 
-        imageView.setImageBitmap(getRecentFileFromCategoryName(argName, context!!))
+        imageView.setImageBitmap(getRecentFileFromCategoryName(argObject.title, context!!))
 
         /**
          * set button click listener
@@ -66,7 +64,7 @@ class CategoryFragment : Fragment () {
         }
 
         btnCamera.setOnClickListener {
-            (context as MainActivity).openCamera(argName)
+            (context as MainActivity).openCamera(argObject)
         }
 
         btnVideo.setOnClickListener {
