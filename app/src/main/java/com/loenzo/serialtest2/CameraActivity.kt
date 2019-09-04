@@ -43,7 +43,7 @@ class CameraActivity : AppCompatActivity () {
             true -> Environment.getRootDirectory()
             false -> Environment.getExternalStorageDirectory()
         }
-        FILE_PATH = f!!.absolutePath + "/$APP_NAME/" + mObject.title
+        FILE_PATH = f.absolutePath + "/$APP_NAME/" + mObject.title
 
         imgBackground = this.findViewById(R.id.imgBack)
         val btnFlash: ImageButton = this.findViewById(R.id.btnFlash)

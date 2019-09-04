@@ -2,7 +2,9 @@ package com.loenzo.serialtest2
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.media.ExifInterface
 import android.media.Image
 import android.net.Uri
@@ -45,8 +47,16 @@ internal class ImageSaver(
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
 
+        //val src: Bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
+        //val copy: Bitmap = getRotateBitmap(src, 0, false)
+
         var output: FileOutputStream? = null
         try {
+            /*
+            output = FileOutputStream(file).apply {
+                copy.compress(Bitmap.CompressFormat.JPEG, 100, this)
+            }
+            */
             output = FileOutputStream(file).apply {
                 write(bytes)
             }
@@ -65,9 +75,9 @@ internal class ImageSaver(
                 data = Uri.fromFile(file)
             }
             context.sendBroadcast(intent)
+            //TODO MIRROR CHECK
             Handler(Looper.getMainLooper()).post {
-                //TODO: do something
-
+                //imageView!!.setImageBitmap(copy)
                 val exif = ExifInterface(file.absolutePath)
                 val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
                     ExifInterface.ORIENTATION_ROTATE_270 -> 270
@@ -81,7 +91,20 @@ internal class ImageSaver(
         }
     }
 
+    fun flipImage(src: Bitmap, type: Int = FLIP_HORIZONTAL): Bitmap {
+        val matrix = Matrix()
+
+        if (type == FLIP_VERTICAL) {
+            matrix.setScale(1.0F, -1.0F)
+        } else if (type == FLIP_HORIZONTAL) {
+            matrix.setScale(-1.0F, 1.0F)
+        }
+        return Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, false)
+    }
+
     companion object {
         private const val TAG = "ImageSaver"
+        private const val FLIP_VERTICAL = 0
+        private const val FLIP_HORIZONTAL = 1
     }
 }
