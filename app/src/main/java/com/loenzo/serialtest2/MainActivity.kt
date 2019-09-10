@@ -132,6 +132,12 @@ class MainActivity : AppCompatActivity() {
         lastImages.currentItem = (lastImages.adapter as CategoryFragmentAdapter).count
     }
 
+    fun openGallery(categoryInfo: LastPicture) {
+        val intent = Intent(this, GalleryActivity::class.java)
+        intent.putExtra("PARAM", categoryInfo)
+        startActivityForResult(intent, GALLERY_ACTIVITY_SUCCESS)
+    }
+
     fun openCamera(categoryInfo: LastPicture) {
         val intent = Intent(this, CameraActivity::class.java)
         intent.putExtra("PARAM", categoryInfo)

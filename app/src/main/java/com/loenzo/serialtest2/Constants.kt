@@ -35,6 +35,7 @@ const val APP_NAME = "MEMORIA"
 // Permission code
 const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1
+const val GALLERY_ACTIVITY_SUCCESS = 2
 
 /**
  * setting folder & image
@@ -74,6 +75,38 @@ fun getRecentFileFromCategoryName (paramName: String, context: Context, useScale
     }
     cursor.close()
     return bitmap
+}
+
+/**
+ * setting folder & image
+ * from argument title info
+ */
+fun getRecentFilePathFromCategoryName (paramName: String, context: Context): String {
+    val sdcard: String = Environment.getExternalStorageState()
+    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+        true -> Environment.getRootDirectory()
+        false -> Environment.getExternalStorageDirectory()
+    }
+    rootDir = File(rootDir.absolutePath + "/$APP_NAME/$paramName/")
+    if (!rootDir.exists())  rootDir.mkdirs()
+
+    val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
+    val selectionArg = arrayOf(paramName)
+    val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
+    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC LIMIT 1"
+
+    val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
+    val returnPath = when (cursor!!.count == 0) {
+        true -> ""
+        false -> {
+            cursor.moveToNext()
+            cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+        }
+    }
+
+    cursor.close()
+    return returnPath
 }
 
 /**

@@ -8,7 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
-import java.util.*
+import com.bumptech.glide.Glide
 
 @Suppress("CAST_NEVER_SUCCEEDS")
 class CategoryFragment : Fragment() {
@@ -32,7 +32,11 @@ class CategoryFragment : Fragment() {
         argObject = arguments!!.get("PARAM") as LastPicture
         textView.text = argObject.title
 
-        imageView.setImageBitmap(getRecentFileFromCategoryName(argObject.title, context!!))
+        //imageView.setImageBitmap(getRecentFileFromCategoryName(argObject.title, context!!))
+        Glide.with(context!!)
+            .load(getRecentFilePathFromCategoryName(argObject.title, context!!))
+            .thumbnail(0.1F)
+            .into(imageView)
 
         /**
          * set button click listener
@@ -60,7 +64,7 @@ class CategoryFragment : Fragment() {
         }
 
         btnList.setOnClickListener {
-            Toast.makeText(context, "LIST BUTTON", Toast.LENGTH_SHORT).show()
+            (context as MainActivity).openGallery(argObject)
         }
 
         btnCamera.setOnClickListener {

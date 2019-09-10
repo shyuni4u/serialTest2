@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.hardware.camera2.CameraCharacteristics
 import android.media.ExifInterface
 import android.media.Image
 import android.net.Uri
@@ -39,7 +40,9 @@ internal class ImageSaver(
     /**
      * PreviewImage: show image after image save
      */
-    private val imageView: ImageView?
+    private val imageView: ImageView?,
+
+    private val cameraDirection: Int
 ) : Runnable {
 
     override fun run() {
@@ -75,7 +78,33 @@ internal class ImageSaver(
                 data = Uri.fromFile(file)
             }
             context.sendBroadcast(intent)
-            //TODO MIRROR CHECK
+
+            if (cameraDirection == CameraCharacteristics.LENS_FACING_FRONT) {
+                val exif = ExifInterface(file.absolutePath)
+                val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                    ExifInterface.ORIENTATION_ROTATE_180-> 180
+                    ExifInterface.ORIENTATION_ROTATE_90-> 90
+                    else -> 0
+                }
+                val flip = flipImage(getRotateBitmap(BitmapFactory.decodeFile(file.absolutePath), rotate, false))
+                try {
+                    output = FileOutputStream(file).apply {
+                        flip.compress(Bitmap.CompressFormat.JPEG, 100, this)
+                    }
+                } catch(e: IOException) {
+                    Log.e(TAG, e.toString())
+                } finally {
+                    output?.let {
+                        try {
+                            it.close()
+                        } catch (e: IOException) {
+                            Log.e(TAG, e.toString())
+                        }
+                    }
+                }
+            }
+
             Handler(Looper.getMainLooper()).post {
                 //imageView!!.setImageBitmap(copy)
                 val exif = ExifInterface(file.absolutePath)
@@ -85,13 +114,13 @@ internal class ImageSaver(
                     ExifInterface.ORIENTATION_ROTATE_90-> 90
                     else -> 0
                 }
-                imageView!!.setImageBitmap(getRotateBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null), rotate, true))
+                imageView!!.setImageBitmap(getRotateBitmap(BitmapFactory.decodeFile(file.absolutePath), rotate, true))
             }
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }
     }
 
-    fun flipImage(src: Bitmap, type: Int = FLIP_HORIZONTAL): Bitmap {
+    private fun flipImage(src: Bitmap, type: Int = FLIP_HORIZONTAL): Bitmap {
         val matrix = Matrix()
 
         if (type == FLIP_VERTICAL) {

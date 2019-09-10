@@ -19,6 +19,8 @@ import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -52,7 +54,11 @@ class CameraActivity : AppCompatActivity () {
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        imgBackground.setImageBitmap(getRecentFileFromCategoryName(mObject.title, this))
+        //imgBackground.setImageBitmap(getRecentFileFromCategoryName(mObject.title, this))
+        Glide.with(this)
+            .load(getRecentFilePathFromCategoryName(mObject.title, this))
+            .thumbnail(0.1F)
+            .into(imgBackground)
         imgBackground.alpha = mObject.camera_alpha
 
         when(mObject.camera_flash == true) {
@@ -88,7 +94,12 @@ class CameraActivity : AppCompatActivity () {
             }
         })
 
-        imgRecent.setImageBitmap(getRecentFileFromCategoryName(mObject.title,this, true))
+        //imgRecent.setImageBitmap(getRecentFileFromCategoryName(mObject.title,this, true))
+        Glide.with(this)
+            .load(getRecentFilePathFromCategoryName(mObject.title, this))
+            .apply(RequestOptions().circleCrop())
+            .thumbnail(0.1F)
+            .into(imgRecent)
 
         btnCapture.setOnClickListener {
             lockFocus()
@@ -225,7 +236,7 @@ class CameraActivity : AppCompatActivity () {
 
         file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")
 
-        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent)))
+        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent), mObject.camera_direction))
     }
 
     /**
