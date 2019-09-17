@@ -1,21 +1,29 @@
 package com.loenzo.serialtest2
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class GalleryActivity : AppCompatActivity() {
+    private lateinit var mObject: LastPicture
+    private lateinit var mRecyclerView: RecyclerView
+    private lateinit var mAdapter: GalleryAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.gallery_item)
+        setContentView(R.layout.gallery_main)
 
-        val test = "http://movie.phinf.naver.net/20171107_251/1510033896133nWqxG_JPEG/movie_image.jpg"
+        mObject = intent.getSerializableExtra("PARAM") as LastPicture
 
-        Glide.with(this)
-            .load(test)
-            .thumbnail(0.1f)
-            .placeholder(R.drawable.photo_pressed)
-            .into(this.findViewById(R.id.imgGalleryItem))
+        val data = getRecentFilePathListFromCategoryName(mObject.title, this)
+
+        mRecyclerView = this.findViewById(R.id.imgList)
+        mRecyclerView.layoutManager = GridLayoutManager(this, 3)
+        mRecyclerView.setHasFixedSize(true)
+
+        mAdapter = GalleryAdapter(this, data)
+        mRecyclerView.adapter = mAdapter
     }
 }

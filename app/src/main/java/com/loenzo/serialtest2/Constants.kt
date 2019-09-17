@@ -110,6 +110,36 @@ fun getRecentFilePathFromCategoryName (paramName: String, context: Context): Str
 }
 
 /**
+ * get image path list
+ * from argument title info
+ */
+fun getRecentFilePathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
+    val sdcard: String = Environment.getExternalStorageState()
+    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+        true -> Environment.getRootDirectory()
+        false -> Environment.getExternalStorageDirectory()
+    }
+    rootDir = File(rootDir.absolutePath + "/$APP_NAME/$paramName/")
+    if (!rootDir.exists())  rootDir.mkdirs()
+
+    val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
+    val selectionArg = arrayOf(paramName)
+    val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
+    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC"
+
+    val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
+
+    val returnArrayList = ArrayList<String>()
+
+    while(cursor!!.moveToNext()) {
+        returnArrayList.add(cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA)))
+    }
+    cursor.close()
+    return returnArrayList
+}
+
+/**
  * rotate bitmap if some device
  */
 fun getRotateBitmap(bitmap: Bitmap, degree: Int, useScale: Boolean): Bitmap {

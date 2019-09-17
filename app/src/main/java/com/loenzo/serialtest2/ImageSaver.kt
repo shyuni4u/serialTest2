@@ -14,6 +14,8 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import android.widget.ImageView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -106,17 +108,14 @@ internal class ImageSaver(
             }
 
             Handler(Looper.getMainLooper()).post {
-                //imageView!!.setImageBitmap(copy)
-                val exif = ExifInterface(file.absolutePath)
-                val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                    ExifInterface.ORIENTATION_ROTATE_270 -> 270
-                    ExifInterface.ORIENTATION_ROTATE_180-> 180
-                    ExifInterface.ORIENTATION_ROTATE_90-> 90
-                    else -> 0
-                }
-                imageView!!.setImageBitmap(getRotateBitmap(BitmapFactory.decodeFile(file.absolutePath), rotate, true))
+                Glide.with(context)
+                    .load(file.absolutePath)
+                    .apply(RequestOptions().circleCrop())
+                    .thumbnail(0.1F)
+                    .override(100, 100)
+                    .into(imageView!!)
+                Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
             }
-            Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -54,7 +54,6 @@ class CameraActivity : AppCompatActivity () {
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        //imgBackground.setImageBitmap(getRecentFileFromCategoryName(mObject.title, this))
         Glide.with(this)
             .load(getRecentFilePathFromCategoryName(mObject.title, this))
             .thumbnail(0.1F)
@@ -94,7 +93,6 @@ class CameraActivity : AppCompatActivity () {
             }
         })
 
-        //imgRecent.setImageBitmap(getRecentFileFromCategoryName(mObject.title,this, true))
         Glide.with(this)
             .load(getRecentFilePathFromCategoryName(mObject.title, this))
             .apply(RequestOptions().circleCrop())
