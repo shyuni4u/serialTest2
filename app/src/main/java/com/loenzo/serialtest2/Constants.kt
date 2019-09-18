@@ -37,6 +37,11 @@ const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1
 const val GALLERY_ACTIVITY_SUCCESS = 2
 
+fun getNameFromPath (path: String): String {
+    val fullName = path.substringAfterLast("/")
+    return fullName.substringBeforeLast(".")
+}
+
 /**
  * setting folder & image
  * from argument title info

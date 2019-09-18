@@ -229,7 +229,7 @@ class CameraActivity : AppCompatActivity () {
      */
     @SuppressLint("SimpleDateFormat")
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
-        val sdf = SimpleDateFormat("yyyyMddhhmmss")
+        val sdf = SimpleDateFormat("yyMMddhhmmss")
         val currentDate = sdf.format(Date())
 
         file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")

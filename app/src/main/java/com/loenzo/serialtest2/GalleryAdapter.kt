@@ -1,26 +1,22 @@
 package com.loenzo.serialtest2
 
 import android.content.Context
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
+import android.content.Intent
+import android.os.Build
+import android.view.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 
-class GalleryAdapter(private var context: Context, private var data: ArrayList<String>) :
+class GalleryAdapter(private var context: Context, private var data: ArrayList<String>):
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    class ItemHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
-        var mImg: ImageView? = null
-        init {
-            mImg = itemView.findViewById(R.id.imgGalleryItem)
-        }
+    class ItemHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
-        override fun onClick(v: View?) {
-        }
-    }
+    var actionmode = false
+    val selectedItem = ArrayList<String>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v: View = LayoutInflater.from(parent.context).inflate(R.layout.gallery_item, parent, false)
@@ -32,14 +28,78 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        (holder as ItemHolder).mImg?.let {
-            Glide.with(context)
-                .load(data[position])
-                .thumbnail(0.3F)
-                .error(R.drawable.no_image)
-                .override(200, 200)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(it)
+
+        fun selectItem(item: String, view: View) {
+            if (actionmode) {
+                if (selectedItem.contains(item)) {
+                    selectedItem.remove(item)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        view.foreground = null
+                    }
+                } else {
+                    selectedItem.add(item)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        view.foreground = view.resources.getDrawable(R.drawable.checked, null)
+                    }
+                }
+            }
+        }
+
+        Glide.with(context)
+            .load(data[position])
+            .thumbnail(0.3F)
+            .error(R.drawable.no_image)
+            .override(200, 200)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(holder.itemView.findViewById(R.id.imgGalleryItem))
+
+        holder.itemView.setOnClickListener {
+            if (actionmode) {
+                selectItem(data[holder.adapterPosition], it)
+            } else {
+                val intent = Intent(context, GalleryDetail::class.java)
+                intent.putExtra("PARAM", data)
+                intent.putExtra("POSITION", holder.adapterPosition)
+                context.startActivity(intent)
+            }
+        }
+
+        val actionModeCallbacks = object: ActionMode.Callback {
+
+            override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+                for (temp in selectedItem) {
+                    data.remove(temp)
+                }
+                mode?.finish()
+                return true
+            }
+
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                actionmode = true
+                menu?.add("Delete")
+                return true
+            }
+
+            override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                return false
+            }
+
+            override fun onDestroyActionMode(mode: ActionMode?) {
+                actionmode = false
+                selectedItem.clear()
+                notifyDataSetChanged()
+            }
+
+        }
+
+        holder.itemView.setOnLongClickListener {
+            if (actionmode) {
+                true
+            } else {
+                (it.context as AppCompatActivity).startSupportActionMode(actionModeCallbacks)
+                selectItem(data[holder.adapterPosition], it)
+                false
+            }
         }
     }
 }
