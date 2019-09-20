@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:andoird="http://schemas.android.com/apk/res-auto"
+        android:shape="oval">
+    <solid andoird:color="@android:color/white" />
+
+    <corners
+            android:bottomLeftRadius="50dp"
+            android:bottomRightRadius="50dp"
+            android:topLeftRadius="50dp"
+            android:topRightRadius="50dp" />
+</shape>

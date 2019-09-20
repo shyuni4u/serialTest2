@@ -1,7 +1,6 @@
 package com.loenzo.serialtest2
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,7 +18,7 @@ class GalleryActivity : AppCompatActivity() {
 
         val data = getRecentFilePathListFromCategoryName(mObject.title, this)
 
-        mRecyclerView = this.findViewById(R.id.imgList)
+        mRecyclerView = findViewById(R.id.imgList)
         mRecyclerView.layoutManager = GridLayoutManager(this, 3)
         mRecyclerView.setHasFixedSize(true)
 

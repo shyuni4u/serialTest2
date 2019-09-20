@@ -17,6 +17,7 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
 
     var actionmode = false
     val selectedItem = ArrayList<String>()
+    val selectedView = ArrayList<View>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v: View = LayoutInflater.from(parent.context).inflate(R.layout.gallery_item, parent, false)
@@ -39,7 +40,7 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
                 } else {
                     selectedItem.add(item)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        view.foreground = view.resources.getDrawable(R.drawable.checked, null)
+                        view.foreground = view.resources.getDrawable(R.drawable.select_image, null)
                     }
                 }
             }
@@ -56,6 +57,7 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
         holder.itemView.setOnClickListener {
             if (actionmode) {
                 selectItem(data[holder.adapterPosition], it)
+                selectedView.add(it)
             } else {
                 val intent = Intent(context, GalleryDetail::class.java)
                 intent.putExtra("PARAM", data)
@@ -87,6 +89,12 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
             override fun onDestroyActionMode(mode: ActionMode?) {
                 actionmode = false
                 selectedItem.clear()
+                for (temp in selectedView) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        temp.foreground = null
+                    }
+                }
+                selectedView.clear()
                 notifyDataSetChanged()
             }
 
@@ -98,6 +106,7 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
             } else {
                 (it.context as AppCompatActivity).startSupportActionMode(actionModeCallbacks)
                 selectItem(data[holder.adapterPosition], it)
+                selectedView.add(it)
                 false
             }
         }
