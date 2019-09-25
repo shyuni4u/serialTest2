@@ -16,7 +16,7 @@ import com.bumptech.glide.Glide
 import kotlin.math.abs
 
 class GalleryDetail : AppCompatActivity() {
-    class SectionPagerAdapter(fm: FragmentManager, private val mList: ArrayList<PlaceholderFragment>) : FragmentPagerAdapter(fm) {
+    class SectionPagerAdapter(fm: FragmentManager, private val mList: ArrayList<PlaceholderFragment>) : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
         override fun getItem(position: Int): Fragment {
             return mList[position]
         }

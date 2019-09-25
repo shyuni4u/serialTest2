@@ -18,13 +18,13 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
+                <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".CameraActivity"></activity>
-        <activity android:name=".GalleryActivity"></activity>
-        <activity android:name=".GalleryDetail"></activity>
+        <activity android:name=".CameraActivity"/>
+        <activity android:name=".GalleryActivity"/>
+        <activity android:name=".GalleryDetail"/>
     </application>
 
 </manifest>

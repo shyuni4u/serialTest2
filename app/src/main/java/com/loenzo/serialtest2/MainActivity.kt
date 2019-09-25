@@ -2,6 +2,7 @@ package com.loenzo.serialtest2
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -12,7 +13,11 @@ import android.widget.Toast
 import androidx.core.os.bundleOf
 import kotlinx.android.synthetic.main.content_main.*
 import com.google.gson.Gson
+import org.jcodec.api.FrameGrab
+import org.jcodec.common.AndroidUtil
+import org.jcodec.common.model.Picture
 import java.io.File
+import java.io.FileOutputStream
 import android.Manifest.permission as _permission
 
 class MainActivity : AppCompatActivity() {
@@ -37,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         if (checkPermissions().isEmpty()) {
             initSettingFile()
             initCategory()
+            makeVideo()
         }
     }
 
@@ -144,6 +150,24 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, CAMERA_ACTIVITY_SUCCESS)
     }
 
+    fun makeVideo() {
+        //TODO SOMETHING
+        val sdcard: String = Environment.getExternalStorageState()
+        var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+            true -> Environment.getRootDirectory()
+            false -> Environment.getExternalStorageDirectory()
+        }
+        val testImage = rootDir.absolutePath + "/$APP_NAME/.movie/frame42.png"
+        rootDir = File(rootDir.absolutePath + "/$APP_NAME/.movie/test.mp4")
+        if (rootDir.exists()) {
+            val frameNumber = 42
+            val picture: Picture = FrameGrab.getFrameFromFile(rootDir, frameNumber)
+
+            val bitmap = AndroidUtil.toBitmap(picture)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, FileOutputStream(testImage))
+        }
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when(requestCode) {
             PERMISSION_CODE -> {
@@ -182,18 +206,3 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-
-/**
-private fun makeRecyclerView(context: Context) {
-    //recyclerView.layoutManager = LinearLayoutManager(context, OrientationHelper.HORIZONTAL, false)
-    //recyclerView.adapter = PostsAdapter(categories)
-}
-
-private fun pickImageFromGallery() {
-    //Intent to pick image
-    val intent = Intent(Intent.ACTION_PICK)
-    intent.type = "image/*"
-}
-
-https://brunch.co.kr/@mystoryg/55
-*/

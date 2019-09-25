@@ -4,7 +4,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 
-class CategoryFragmentAdapter(fm: FragmentManager, private val mList: ArrayList<CategoryFragment>) : FragmentPagerAdapter(fm) {
+class CategoryFragmentAdapter(fm: FragmentManager, private val mList: ArrayList<CategoryFragment>) : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
     override fun getItem(position: Int): Fragment {
         return mList[position]
