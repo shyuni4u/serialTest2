@@ -105,17 +105,11 @@ class CategoryFragment : Fragment() {
             builder.setPositiveButton(resources.getString(R.string.apply)
             ) { _, _ -> run {
                 if (etName.text.toString() != "" && etFps.text.toString() != "") {
-                    AsyncMakeVideo().execute(ParamVideo(etName.text.toString(), Integer.parseInt(etFps.text.toString())))
-                    /*
-                    val dialog = Dialog(context!!)
-                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-                    dialog.setCancelable(false)
-                    dialog.setContentView(R.layout.progressbar)
-
-                    Handler().post(
-                        MainActivity.MakeVideo(argObject.title, etName.text.toString(), Integer.parseInt(etFps.text.toString()), context!!, dialog)
-                    )
-                    */
+                    //Handler(Looper.getMainLooper()).post {
+                        AsyncMakeVideo().execute(
+                            ParamVideo(etName.text.toString(), Integer.parseInt(etFps.text.toString()))
+                        )
+                    //}
                 }
             } }
             builder.setNegativeButton(resources.getString(R.string.cancel)
@@ -134,6 +128,7 @@ class CategoryFragment : Fragment() {
     inner class AsyncMakeVideo : AsyncTask<ParamVideo, Int, Int>() {
 
         override fun doInBackground(vararg params: ParamVideo?): Int {
+            var nProgress = 0
             if (params[0] != null) {
                 val temp = params[0]!!
                 val data = getRecentFilePathListFromCategoryName(argObject.title, context!!)
@@ -143,6 +138,8 @@ class CategoryFragment : Fragment() {
                 NIOUtils.writableFileChannel(filePath).use {
                         fileChannel -> AndroidSequenceEncoder(fileChannel, Rational.R(temp.fps, 1)).let {
                             encoder ->  data.map {
+                                nProgress = 100 * data.indexOf(it) / data.size
+                                publishProgress(nProgress)
                                 encoder.encodeImage(BitmapFactory.decodeFile(it).scale(1280, 720, false))
                             }
                             encoder.finish()
@@ -152,9 +149,8 @@ class CategoryFragment : Fragment() {
                             context!!.sendBroadcast(intent)
                         }
                 }
-                return data.size
             }
-            return 0
+            return nProgress
         }
 
         override fun onPostExecute(result: Int?) {
