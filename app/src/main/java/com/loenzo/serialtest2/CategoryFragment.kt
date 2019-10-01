@@ -1,14 +1,24 @@
 package com.loenzo.serialtest2
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.os.Bundle
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.*
+import android.text.InputType
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.graphics.scale
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import org.jcodec.api.android.AndroidSequenceEncoder
+import org.jcodec.common.io.NIOUtils
+import org.jcodec.common.model.Rational
+import java.io.File
 
 @Suppress("CAST_NEVER_SUCCEEDS")
 class CategoryFragment : Fragment() {
@@ -19,6 +29,7 @@ class CategoryFragment : Fragment() {
 
     private lateinit var imageView: ImageView
     private lateinit var argObject: LastPicture
+    private lateinit var tempTextView: TextView
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? = inflater.inflate(R.layout.row_category, container, false)
@@ -31,6 +42,7 @@ class CategoryFragment : Fragment() {
         imageView = view.findViewById(R.id.lastImage)
         argObject = arguments!!.get("PARAM") as LastPicture
         textView.text = argObject.title
+        tempTextView = textView
 
         //imageView.setImageBitmap(getRecentFileFromCategoryName(argObject.title, context!!))
         Glide.with(context!!)
@@ -72,11 +84,90 @@ class CategoryFragment : Fragment() {
         }
 
         btnVideo.setOnClickListener {
-            //Toast.makeText(context, "VIDEO BUTTON", Toast.LENGTH_SHORT).show()
+            //(context as MainActivity).makeVideo(argObject)
+            val builder = AlertDialog.Builder(context)
+
+            val etName = EditText(context)
+            etName.hint = resources.getString(R.string.movie_name)
+
+            val etFps = EditText(context)
+            etFps.hint = resources.getString(R.string.movie_time)
+            etFps.inputType = InputType.TYPE_CLASS_NUMBER
+            etFps.text = etFps.text.append("8")
+
+            val lay = LinearLayout(context)
+            lay.orientation = LinearLayout.VERTICAL
+            lay.addView(etName)
+            lay.addView(etFps)
+            builder.setView(lay)
+
+            builder.setTitle(resources.getString(R.string.add_movie_title))
+            builder.setPositiveButton(resources.getString(R.string.apply)
+            ) { _, _ -> run {
+                if (etName.text.toString() != "" && etFps.text.toString() != "") {
+                    AsyncMakeVideo().execute(ParamVideo(etName.text.toString(), Integer.parseInt(etFps.text.toString())))
+                    /*
+                    val dialog = Dialog(context!!)
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                    dialog.setCancelable(false)
+                    dialog.setContentView(R.layout.progressbar)
+
+                    Handler().post(
+                        MainActivity.MakeVideo(argObject.title, etName.text.toString(), Integer.parseInt(etFps.text.toString()), context!!, dialog)
+                    )
+                    */
+                }
+            } }
+            builder.setNegativeButton(resources.getString(R.string.cancel)
+            ) { _, _ -> run {} }
+            builder.show()
         }
 
         btnOption.setOnClickListener {
             Toast.makeText(context, "OPTION BUTTON", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    inner class ParamVideo (val name: String, val fps: Int)
+
+    @SuppressLint("StaticFieldLeak")
+    inner class AsyncMakeVideo : AsyncTask<ParamVideo, Int, Int>() {
+
+        override fun doInBackground(vararg params: ParamVideo?): Int {
+            if (params[0] != null) {
+                val temp = params[0]!!
+                val data = getRecentFilePathListFromCategoryName(argObject.title, context!!)
+                val rootDir: File = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+
+                val filePath = rootDir.absolutePath + "/${temp.name}.mp4"
+                NIOUtils.writableFileChannel(filePath).use {
+                        fileChannel -> AndroidSequenceEncoder(fileChannel, Rational.R(temp.fps, 1)).let {
+                            encoder ->  data.map {
+                                encoder.encodeImage(BitmapFactory.decodeFile(it).scale(1280, 720, false))
+                            }
+                            encoder.finish()
+                            val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                                this.data = Uri.fromFile(File(filePath))
+                            }
+                            context!!.sendBroadcast(intent)
+                        }
+                }
+                return data.size
+            }
+            return 0
+        }
+
+        override fun onPostExecute(result: Int?) {
+            super.onPostExecute(result)
+            tempTextView.text = argObject.title
+            Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+        }
+
+        @SuppressLint("SetTextI18n")
+        override fun onProgressUpdate(vararg values: Int?) {
+            super.onProgressUpdate(*values)
+            Log.i(TAG, "${values[0].toString()}%")
+            if (values[0] != null) tempTextView.text = "${values[0].toString()}%"
         }
     }
 }
