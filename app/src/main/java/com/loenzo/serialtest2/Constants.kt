@@ -15,18 +15,18 @@
  */
 
 @file:JvmName("Constants")
+@file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 
 package com.loenzo.serialtest2
 
 import android.content.Context
 import android.database.Cursor
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.media.ExifInterface
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.graphics.scale
 import java.io.File
 
@@ -34,8 +34,9 @@ const val APP_NAME = "MEMORIA"
 
 // Permission code
 const val PERMISSION_CODE = 1000
-const val CAMERA_ACTIVITY_SUCCESS = 1
-const val GALLERY_ACTIVITY_SUCCESS = 2
+const val CAMERA_ACTIVITY_SUCCESS = 1001
+const val GALLERY_ACTIVITY_SUCCESS = 1002
+const val SELECT_MEDIA_SUCCESS = 1003
 
 fun getNameFromPath (path: String): String {
     val fullName = path.substringAfterLast("/")
@@ -46,6 +47,7 @@ fun getNameFromPath (path: String): String {
  * setting folder & image
  * from argument title info
  */
+/*
 fun getRecentFileFromCategoryName (paramName: String, context: Context, useScale: Boolean = false): Bitmap? {
     val sdcard: String = Environment.getExternalStorageState()
     var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
@@ -81,6 +83,7 @@ fun getRecentFileFromCategoryName (paramName: String, context: Context, useScale
     cursor.close()
     return bitmap
 }
+ */
 
 /**
  * setting folder & image
@@ -142,6 +145,31 @@ fun getRecentFilePathListFromCategoryName (paramName: String, context: Context):
     }
     cursor.close()
     return returnArrayList
+}
+
+/**
+ * remove directory tree
+ * from argument path info
+ */
+fun setDirectoryEmpty(directoryPath: String) {
+    val dir = File(directoryPath)
+    val childFileList = dir.listFiles()
+
+    if (dir.exists()) {
+        Log.i("TEST", "dir exists")
+        if (childFileList.isNotEmpty()) {
+            Log.i("TEST", "childFileList size: ${childFileList.size}")
+            for (childFile in childFileList) {
+                if (childFile.isDirectory) {
+                    Log.i("TEST", childFile.absolutePath)
+                    //setDirectoryEmpty(childFile.absolutePath)
+                } else {
+                    childFile.delete()
+                }
+            }
+        }
+        dir.delete()
+    }
 }
 
 /**

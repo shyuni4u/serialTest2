@@ -1,6 +1,7 @@
 package com.loenzo.serialtest2
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,6 +18,7 @@ class GalleryActivity : AppCompatActivity() {
         mObject = intent.getSerializableExtra("PARAM") as LastPicture
 
         val data = getRecentFilePathListFromCategoryName(mObject.title, this)
+        Log.i("GalleryActivity", "data size: ${data.size}")
 
         mRecyclerView = findViewById(R.id.imgList)
         mRecyclerView.layoutManager = GridLayoutManager(this, 3)

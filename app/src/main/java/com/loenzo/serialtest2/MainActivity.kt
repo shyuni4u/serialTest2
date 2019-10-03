@@ -82,7 +82,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initCategory() {
-        // read external storage check ... XXX not yet
         lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, makeParamList())
     }
 
@@ -128,6 +127,45 @@ class MainActivity : AppCompatActivity() {
             arguments = bundleOf("PARAM" to LastPicture(newName, ""))
         })
         lastImages.currentItem = (lastImages.adapter as CategoryFragmentAdapter).count
+    }
+
+    /**
+     * remove category
+     * save refreshed info to setting.json
+     */
+    fun removeCategoryFragment(delName: String, isChecked: Boolean) {
+        val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
+        val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
+        val list = ArrayList<LastPicture>()
+        val categoryFragmentArray = ArrayList<CategoryFragment>()
+
+        var n = 0
+        while (n < categoryInfoArray.size) {
+            if (categoryInfoArray[n].title == delName) {
+                n += 1
+                continue
+            }
+            list.add(categoryInfoArray[n])
+            CategoryFragment().apply {
+                arguments = bundleOf("PARAM" to categoryInfoArray[n])
+                categoryFragmentArray.add(this)
+            }
+            n += 1
+        }
+
+        settingFile.writeText(Gson().toJson(list))
+        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, categoryFragmentArray).apply {
+            notifyDataSetChanged()
+        }
+        if (isChecked) {
+            val sdcard: String = Environment.getExternalStorageState()
+            val rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+                true -> Environment.getRootDirectory()
+                false -> Environment.getExternalStorageDirectory()
+            }
+            Log.i(TAG, "Call setDirectoryEmpty")
+            setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/")
+        }
     }
 
     fun openGallery(categoryInfo: LastPicture) {

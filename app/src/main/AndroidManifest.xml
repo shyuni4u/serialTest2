@@ -26,5 +26,4 @@
         <activity android:name=".GalleryActivity"/>
         <activity android:name=".GalleryDetail"/>
     </application>
-
 </manifest>

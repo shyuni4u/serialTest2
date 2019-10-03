@@ -2,13 +2,16 @@ package com.loenzo.serialtest2
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import java.io.File
 
 class GalleryAdapter(private var context: Context, private var data: ArrayList<String>):
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -71,6 +74,12 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
             override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
                 for (temp in selectedItem) {
                     data.remove(temp)
+                    val delFile = File(temp)
+                    delFile.delete()
+                    val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                        data = Uri.fromFile(delFile)
+                    }
+                    context.sendBroadcast(intent)
                 }
                 mode?.finish()
                 return true
@@ -78,7 +87,7 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
 
             override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
                 actionmode = true
-                menu?.add("Delete")
+                menu?.add(context.resources.getString(R.string.delete))
                 return true
             }
 
