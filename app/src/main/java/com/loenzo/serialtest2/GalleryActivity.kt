@@ -18,11 +18,12 @@ class GalleryActivity : AppCompatActivity() {
         mObject = intent.getSerializableExtra("PARAM") as LastPicture
 
         val data = getRecentFilePathListFromCategoryName(mObject.title, this)
-        Log.i("GalleryActivity", "data size: ${data.size}")
 
+        //val snapHelper = SnapHelperOneByOne()
         mRecyclerView = findViewById(R.id.imgList)
         mRecyclerView.layoutManager = GridLayoutManager(this, 3)
         mRecyclerView.setHasFixedSize(true)
+        //snapHelper.attachToRecyclerView(mRecyclerView)
 
         mAdapter = GalleryAdapter(this, data)
         mRecyclerView.adapter = mAdapter

@@ -1,39 +1,43 @@
 package com.loenzo.serialtest2
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
-import android.util.Log
 import android.view.Gravity
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
-import com.google.gson.Gson
-import kotlinx.android.synthetic.main.content_main.*
-import java.io.File
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import android.Manifest.permission as _permission
 
 class MainActivity : AppCompatActivity() {
     //  like static
     companion object {
-        private const val TAG = "MainActivity: "
-
         private val permissionsRequired = arrayOf(
             _permission.WRITE_EXTERNAL_STORAGE,
             _permission.READ_EXTERNAL_STORAGE,
             _permission.CAMERA)
     }
 
-    private lateinit var settingFile: File
+    private lateinit var mRecyclerView: RecyclerView
+    private lateinit var mAdapter: CategoryAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.content_main)
-        Log.i(TAG, "Call onCreate")
 
         getUsePermission()
         if (checkPermissions().isEmpty()) {
-            initSettingFile()
+            MobileAds.initialize(this) {}
+            val mAdView = findViewById<AdView>(R.id.adView)
+            val adRequest = AdRequest.Builder().build()
+            mAdView.loadAd(adRequest)
+
+            readSetting()
             initCategory()
         }
     }
@@ -64,69 +68,15 @@ class MainActivity : AppCompatActivity() {
         return requests
     }
 
-    private fun initSettingFile() {
-        val sdcard: String = Environment.getExternalStorageState()
-        var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-            true -> Environment.getRootDirectory()
-            false -> Environment.getExternalStorageDirectory()
-        }
-        rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
-        if (!rootDir.exists()) {
-            rootDir.mkdirs()
-        }
-
-        settingFile = File(rootDir.absolutePath + "/setting.json")
-        if (!settingFile.exists()) {
-            settingFile.writeText(Gson().toJson(listOf(LastPicture("DEFAULT", ""))))
-        }
-    }
-
     private fun initCategory() {
-        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, makeParamList())
-    }
+        val snapHelper = SnapHelperOneByOne()
+        mRecyclerView = findViewById(R.id.lastImages)
+        mRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        mRecyclerView.setHasFixedSize(true)
+        snapHelper.attachToRecyclerView(mRecyclerView)
 
-    private fun makeParamList() : ArrayList<CategoryFragment> {
-        val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
-        val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
-        val list: ArrayList<CategoryFragment> = ArrayList()
-
-        for (categoryInfo in categoryInfoArray) {
-            //  setting array list for CategoryFragment
-            CategoryFragment().apply {
-                arguments = bundleOf("PARAM" to categoryInfo)
-                list.add(this)
-            }
-        }
-        return list
-    }
-
-    /**
-     * add category
-     * save refreshed info to setting.json
-     */
-    fun addCategoryFragment(newName: String) {
-        val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
-        val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
-
-        // check newName exists
-        for (info in categoryInfoArray) {
-            if (info.title == newName) {
-                Toast.makeText(this, resources.getString(R.string.duplicate_name), Toast.LENGTH_SHORT).apply {
-                    setGravity(Gravity.BOTTOM, 0, 100)
-                }.show()
-                return
-            }
-        }
-
-        val list: ArrayList<LastPicture> = categoryInfoArray.toCollection(ArrayList())
-        list.add(LastPicture(newName, ""))
-
-        settingFile.writeText(Gson().toJson(list))
-
-        (lastImages.adapter as CategoryFragmentAdapter).addItem(CategoryFragment().apply {
-            arguments = bundleOf("PARAM" to LastPicture(newName, ""))
-        })
-        lastImages.currentItem = (lastImages.adapter as CategoryFragmentAdapter).count
+        mAdapter = CategoryAdapter(this, readSetting().toCollection(ArrayList()), mRecyclerView)
+        mRecyclerView.adapter = mAdapter
     }
 
     /**
@@ -134,10 +84,10 @@ class MainActivity : AppCompatActivity() {
      * save refreshed info to setting.json
      */
     fun removeCategoryFragment(delName: String, isChecked: Boolean) {
+        /*
         val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
         val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
         val list = ArrayList<LastPicture>()
-        val categoryFragmentArray = ArrayList<CategoryFragment>()
 
         var n = 0
         while (n < categoryInfoArray.size) {
@@ -146,17 +96,17 @@ class MainActivity : AppCompatActivity() {
                 continue
             }
             list.add(categoryInfoArray[n])
-            CategoryFragment().apply {
-                arguments = bundleOf("PARAM" to categoryInfoArray[n])
-                categoryFragmentArray.add(this)
-            }
             n += 1
         }
 
         settingFile.writeText(Gson().toJson(list))
-        lastImages.adapter = CategoryFragmentAdapter(supportFragmentManager, categoryFragmentArray).apply {
-            notifyDataSetChanged()
-        }
+        //mCategoryFragmentAdapter.delItem(delName)
+         */
+        /*
+        mCategoryFragmentAdapter = CategoryFragmentAdapter(supportFragmentManager, makeParamList())
+        mViewPager = findViewById(R.id.lastImages)
+        mViewPager.adapter = mCategoryFragmentAdapter
+
         if (isChecked) {
             val sdcard: String = Environment.getExternalStorageState()
             val rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
@@ -166,6 +116,7 @@ class MainActivity : AppCompatActivity() {
             Log.i(TAG, "Call setDirectoryEmpty")
             setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/")
         }
+        */
     }
 
     fun openGallery(categoryInfo: LastPicture) {
@@ -186,7 +137,7 @@ class MainActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //permission from popup granted
                     //pickImageFromGallery()
-                    initSettingFile()
+                    readSetting()
                     initCategory()
                 } else {
                     //permission from popup denied
@@ -201,19 +152,27 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
+        if (resultCode == Activity.RESULT_OK && requestCode == SELECT_MEDIA_SUCCESS && data != null) {
+            //val selectedVideo = getRealPathFromURI(data.data!!, context!!)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                this.data = data.data
+                this.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+            }
+        }
+
         if (requestCode == RESULT_FIRST_USER) {
             if (resultCode == CAMERA_ACTIVITY_SUCCESS) {
                 val resultObject = data!!.getSerializableExtra("RESULT_PARAM") as LastPicture
-
-                val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
-                val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
+                val categoryInfoArray = readSetting()
 
                 // find title
                 for (info in categoryInfoArray) {
                     if (info.title == resultObject.title)   info.copy(resultObject)
                 }
-
-                settingFile.writeText(Gson().toJson(categoryInfoArray))
+                writeSetting(categoryInfoArray)
             }
         }
     }

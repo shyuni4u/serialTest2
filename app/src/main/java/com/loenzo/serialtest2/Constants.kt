@@ -28,6 +28,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.graphics.scale
+import com.google.gson.Gson
 import java.io.File
 
 const val APP_NAME = "MEMORIA"
@@ -38,52 +39,61 @@ const val CAMERA_ACTIVITY_SUCCESS = 1001
 const val GALLERY_ACTIVITY_SUCCESS = 1002
 const val SELECT_MEDIA_SUCCESS = 1003
 
-fun getNameFromPath (path: String): String {
-    val fullName = path.substringAfterLast("/")
-    return fullName.substringBeforeLast(".")
-}
-
 /**
- * setting folder & image
- * from argument title info
+ * convert & save json file
+ * from [list]
  */
-/*
-fun getRecentFileFromCategoryName (paramName: String, context: Context, useScale: Boolean = false): Bitmap? {
+fun writeSetting(list: Array<LastPicture>) {
     val sdcard: String = Environment.getExternalStorageState()
     var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
         true -> Environment.getRootDirectory()
         false -> Environment.getExternalStorageDirectory()
     }
-    rootDir = File(rootDir.absolutePath + "/$APP_NAME/$paramName/")
-    if (!rootDir.exists())  rootDir.mkdirs()
-
-    val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
-    val selectionArg = arrayOf(paramName)
-    val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
-    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC LIMIT 1"
-
-    val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
-
-    val bitmap: Bitmap = when (cursor!!.count == 0) {
-        true -> BitmapFactory.decodeStream(context.resources.assets.open("blank_canvas.png"))
-        false -> {
-            cursor.moveToNext()
-            val path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
-            val exif = ExifInterface(path)
-            val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                ExifInterface.ORIENTATION_ROTATE_270 -> 270
-                ExifInterface.ORIENTATION_ROTATE_180-> 180
-                ExifInterface.ORIENTATION_ROTATE_90-> 90
-                else -> 0
-            }
-            getRotateBitmap(BitmapFactory.decodeFile(path), rotate, useScale)
-        }
+    rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
+    if (!rootDir.exists()) {
+        rootDir.mkdirs()
     }
-    cursor.close()
-    return bitmap
+
+    val settingFile = File(rootDir.absolutePath + "/setting.json")
+    if (!settingFile.exists()) {
+        settingFile.writeText(Gson().toJson(listOf(LastPicture("DEFAULT", ""))))
+    }
+    settingFile.writeText(Gson().toJson(list))
 }
+
+/**
+ * read setting information
+ * from setting.json file
+ * if setting.json is not exist
+ * make default info
  */
+fun readSetting(): Array<LastPicture> {
+    val sdcard: String = Environment.getExternalStorageState()
+    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+        true -> Environment.getRootDirectory()
+        false -> Environment.getExternalStorageDirectory()
+    }
+    rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
+    if (!rootDir.exists()) {
+        rootDir.mkdirs()
+    }
+
+    val settingFile = File(rootDir.absolutePath + "/setting.json")
+    if (!settingFile.exists()) {
+        settingFile.writeText(Gson().toJson(listOf(LastPicture("DEFAULT", ""))))
+    }
+    val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
+    return Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
+}
+
+/**
+ * return file name
+ * through cutting path
+ */
+fun getNameFromPath (path: String): String {
+    val fullName = path.substringAfterLast("/")
+    return fullName.substringBeforeLast(".")
+}
 
 /**
  * setting folder & image

@@ -13,7 +13,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.bumptech.glide.Glide
-import kotlin.math.abs
 
 class GalleryDetail : AppCompatActivity() {
     class SectionPagerAdapter(fm: FragmentManager, private val mList: ArrayList<PlaceholderFragment>) : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
@@ -43,45 +42,6 @@ class GalleryDetail : AppCompatActivity() {
         }
     }
 
-    class DepthPageTransformer : ViewPager.PageTransformer {
-        override fun transformPage(view: View, position: Float) {
-            val min = 0.75F
-
-            view.apply {
-                val pageWidth = width
-                when {
-                    position < -1 -> { // [-Infinity,-1)
-                        // This page is way off-screen to the left.
-                        alpha = 0f
-                    }
-                    position <= 0 -> { // [-1,0]
-                        // Use the default slide transition when moving to the left page
-                        alpha = 1f
-                        translationX = 0f
-                        scaleX = 1f
-                        scaleY = 1f
-                    }
-                    position <= 1 -> { // (0,1]
-                        // Fade the page out.
-                        alpha = 1 - position
-
-                        // Counteract the default slide transition
-                        translationX = pageWidth * -position
-
-                        // Scale the page down (between MIN_SCALE and 1)
-                        val scaleFactor = (min + (1 - min) * (1 - abs(position)))
-                        scaleX = scaleFactor
-                        scaleY = scaleFactor
-                    }
-                    else -> { // (1,+Infinity]
-                        // This page is way off-screen to the right.
-                        alpha = 0f
-                    }
-                }
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.gallery_detail)
@@ -106,7 +66,6 @@ class GalleryDetail : AppCompatActivity() {
 
         val mViewPager: ViewPager = findViewById(R.id.viewPagerDetail)
 
-        mViewPager.setPageTransformer(true, DepthPageTransformer())
         mViewPager.adapter = mSectionsPagerAdapter
         mViewPager.currentItem = pos
 
