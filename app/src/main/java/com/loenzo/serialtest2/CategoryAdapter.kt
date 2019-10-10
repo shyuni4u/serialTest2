@@ -3,6 +3,7 @@ package com.loenzo.serialtest2
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -25,12 +26,13 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.*
+import kotlin.collections.ArrayList
 
 class CategoryAdapter (private var context: Context, private var data: ArrayList<LastPicture>, private val recyclerView: RecyclerView):
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
-        //private const val TAG = "CategoryAdapter"
         private const val MOVIE = 1
         private const val GIF = 2
     }
@@ -39,6 +41,10 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
     private lateinit var tempTextView: TextView
 
     class ItemHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+    fun changeAlarmState(position: Int) {
+        data[position].alarmState = !data[position].alarmState
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val v: View = LayoutInflater.from(parent.context).inflate(R.layout.row_category, parent, false)
@@ -72,8 +78,46 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         val btnVideo = holder.itemView.findViewById<ImageButton>(R.id.btnVideo)
         val btnGif = holder.itemView.findViewById<ImageButton>(R.id.btnGif)
 
+        if (data[position].alarmState) {
+            btnNotification.setImageResource(R.drawable.main_btn_notification)
+        } else {
+            btnNotification.setImageResource(R.drawable.main_btn_notification_off)
+        }
         btnNotification.setOnClickListener {
-            Toast.makeText(context, "Notification", Toast.LENGTH_SHORT).show()
+            if (data[position].alarmState) {    //Off
+                scheduleNotificationStop(context, data[position].id)
+                data[position].alarmState = false
+                btnNotification.setImageResource(R.drawable.main_btn_notification_off)
+                notifyDataSetChanged()
+            } else {    //On
+                scheduleNotification(context, data[position].alarmMilliseconds, data[position].title, data[position].id)
+                data[position].alarmState = true
+                btnNotification.setImageResource(R.drawable.main_btn_notification)
+                notifyDataSetChanged()
+            }
+            val array = arrayOfNulls<LastPicture>(data.size)
+            writeSetting(data.toArray(array))
+        }
+        btnNotification.setOnLongClickListener {
+            val originCalendar = Calendar.getInstance()
+            originCalendar.timeInMillis = data[position].alarmMilliseconds
+            if (originCalendar.timeInMillis.toInt() == 0) {
+                originCalendar.timeInMillis = System.currentTimeMillis()
+            }
+
+            TimePickerDialog(context,
+                TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
+                    val cal = Calendar.getInstance()
+                    cal.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                    cal.set(Calendar.MINUTE, minute)
+                    cal.set(Calendar.SECOND, 0)
+                    cal.set(Calendar.MILLISECOND, 0)
+                    data[position].alarmMilliseconds = cal.timeInMillis
+                }, originCalendar.get(Calendar.HOUR_OF_DAY), originCalendar.get(Calendar.MINUTE), true).apply { show() }
+
+            val array = arrayOfNulls<LastPicture>(data.size)
+            writeSetting(data.toArray(array))
+            false
         }
 
         btnAdd.setOnClickListener {
@@ -121,7 +165,31 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             builder.setView(check)
             builder.setPositiveButton(context.resources.getString(R.string.delete)
             ) { _, _ -> run {
-                //(context as MainActivity).removeCategoryFragment(item.title, check.isChecked)
+                var temp: LastPicture? = null
+                for(el in data) {
+                    if (el.title == item.title) {
+                        temp = el
+                    }
+                }
+
+                if (data.size > 1) {
+                    if (temp != null) data.remove(temp)
+                    notifyItemRemoved(position)
+
+                    val array = arrayOfNulls<LastPicture>(data.size)
+                    writeSetting(data.toArray(array))
+
+                    scheduleNotificationStop(context, item.id)
+
+                    if (check.isChecked) {
+                        val sdcard: String = Environment.getExternalStorageState()
+                        val rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
+                            true -> Environment.getRootDirectory()
+                            false -> Environment.getExternalStorageDirectory()
+                        }
+                        setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/${item.title}")
+                    }
+                }
             } }
             builder.setNegativeButton(context.resources.getString(R.string.cancel)
             ) { _, _ -> run {} }
@@ -233,7 +301,6 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             false
         }
     }
-
 
     inner class ParamVideo (val categoryName: String, val name: String, val fps: Int, val type: Int)
 

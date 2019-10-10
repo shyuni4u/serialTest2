@@ -19,25 +19,31 @@
 
 package com.loenzo.serialtest2
 
+import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.drawable.BitmapDrawable
+import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.core.graphics.scale
 import com.google.gson.Gson
 import java.io.File
+import kotlin.collections.ArrayList
 
-const val APP_NAME = "MEMORIA"
+const val APP_NAME = "OverCam"
 
 // Permission code
 const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1001
-const val GALLERY_ACTIVITY_SUCCESS = 1002
-const val SELECT_MEDIA_SUCCESS = 1003
+const val SELECT_MEDIA_SUCCESS = 1002
 
 /**
  * convert & save json file
@@ -56,7 +62,7 @@ fun writeSetting(list: Array<LastPicture>) {
 
     val settingFile = File(rootDir.absolutePath + "/setting.json")
     if (!settingFile.exists()) {
-        settingFile.writeText(Gson().toJson(listOf(LastPicture("DEFAULT", ""))))
+        settingFile.writeText(Gson().toJson(listOf(LastPicture("TEMP", ""))))
     }
     settingFile.writeText(Gson().toJson(list))
 }
@@ -79,8 +85,8 @@ fun readSetting(): Array<LastPicture> {
     }
 
     val settingFile = File(rootDir.absolutePath + "/setting.json")
-    if (!settingFile.exists()) {
-        settingFile.writeText(Gson().toJson(listOf(LastPicture("DEFAULT", ""))))
+    if (!settingFile.exists() ) {
+        settingFile.writeText(Gson().toJson(listOf(LastPicture("TEMP", ""))))
     }
     val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
     return Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
@@ -99,7 +105,7 @@ fun getNameFromPath (path: String): String {
  * setting folder & image
  * from argument title info
  */
-fun getRecentFilePathFromCategoryName (paramName: String, context: Context): String {
+fun getRecentFilePathFromCategoryName (paramName: String, context: Context): String? {
     val sdcard: String = Environment.getExternalStorageState()
     var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
         true -> Environment.getRootDirectory()
@@ -116,7 +122,7 @@ fun getRecentFilePathFromCategoryName (paramName: String, context: Context): Str
 
     val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
     val returnPath = when (cursor!!.count == 0) {
-        true -> ""
+        true -> null
         false -> {
             cursor.moveToNext()
             cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
@@ -166,14 +172,9 @@ fun setDirectoryEmpty(directoryPath: String) {
     val childFileList = dir.listFiles()
 
     if (dir.exists()) {
-        Log.i("TEST", "dir exists")
         if (childFileList.isNotEmpty()) {
-            Log.i("TEST", "childFileList size: ${childFileList.size}")
             for (childFile in childFileList) {
-                if (childFile.isDirectory) {
-                    Log.i("TEST", childFile.absolutePath)
-                    //setDirectoryEmpty(childFile.absolutePath)
-                } else {
+                if (!childFile.isDirectory) {
                     childFile.delete()
                 }
             }
@@ -207,4 +208,69 @@ fun getRotateBitmap(bitmap: Bitmap, degree: Int, useScale: Boolean): Bitmap {
     m.setRotate(degree.toFloat(), (scaledBitmap.width / 2).toFloat(), (scaledBitmap.height / 2).toFloat())
 
     return Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.width, scaledBitmap.height, m, true)
+}
+
+/**
+ * set notification
+ */
+fun scheduleNotification(context: Context, millisecond: Long, title: String, id: Long) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val name = context.getString(R.string.app_name)
+        val descriptionText = "descriptionText"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(title, name, importance).apply {
+            description = descriptionText
+        }
+        // Register the channel with the system
+        val notificationManager: NotificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val builder = NotificationCompat.Builder(context, title)
+    builder.setContentTitle(context.resources.getString(R.string.app_name))
+        .setContentText(context.resources.getString(R.string.check_time, title))
+        .setAutoCancel(true)
+        .setSmallIcon(R.drawable.small_icon)
+        .setLargeIcon((context.resources.getDrawable(R.drawable.icon, null) as BitmapDrawable).bitmap)
+        .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+
+
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+    val activity = PendingIntent.getBroadcast(context, id.toInt(), intent, PendingIntent.FLAG_CANCEL_CURRENT)
+    builder.setContentIntent(activity)
+
+    val notification = builder.build()
+
+    val notificationIntent = Intent(context, EnzoNotificationPublisher::class.java)
+    notificationIntent.putExtra(EnzoNotificationPublisher.ID, id)
+    notificationIntent.putExtra(EnzoNotificationPublisher.NOTIFICATION, notification)
+    val pendingIntent = PendingIntent.getBroadcast(context, id.toInt(), notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT)
+
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond, AlarmManager.INTERVAL_DAY, pendingIntent)
+}
+
+fun scheduleNotificationStop(context: Context, id: Long) {
+    val notificationIntent = Intent(context, EnzoNotificationPublisher::class.java)
+    val pendingIntent = PendingIntent.getBroadcast(context, id.toInt(), notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT)
+
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    alarmManager.cancel(pendingIntent)
+}
+
+class EnzoNotificationPublisher: BroadcastReceiver() {
+    companion object {
+        const val ID = "ID"
+        const val NOTIFICATION = "NOTIFICATION"
+    }
+    override fun onReceive(context: Context?, intent: Intent?) {
+        val notificationManager = (context!!.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+        val notification = intent!!.getParcelableExtra<Notification>(NOTIFICATION)
+        val id = intent.getIntExtra(ID, 0)
+        notificationManager.notify(id, notification)
+    }
+
 }

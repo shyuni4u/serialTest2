@@ -15,6 +15,7 @@ import android.util.Size
 import android.util.SparseIntArray
 import android.view.Surface
 import android.view.TextureView
+import android.view.View
 import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -54,20 +55,29 @@ class CameraActivity : AppCompatActivity () {
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        Glide.with(this)
-            .load(getRecentFilePathFromCategoryName(mObject.title, this))
-            .thumbnail(0.1F)
-            .into(imgBackground)
-        imgBackground.alpha = mObject.camera_alpha
+        val recentFilePath = getRecentFilePathFromCategoryName(mObject.title, this)
 
-        when(mObject.camera_flash == true) {
+        if (recentFilePath == null) {
+            barAlpha.visibility = View.INVISIBLE
+            imgBackground.visibility = View.INVISIBLE
+        } else {
+            barAlpha.visibility = View.VISIBLE
+            imgBackground.visibility = View.VISIBLE
+            Glide.with(this)
+                .load(recentFilePath)
+                .thumbnail(0.1F)
+                .into(imgBackground)
+            imgBackground.alpha = mObject.cameraAlpha
+        }
+
+        when(mObject.cameraFlash == true) {
             true -> btnFlash.setBackgroundResource(R.drawable.flash)
             false -> btnFlash.setBackgroundResource(R.drawable.flash_off)
         }
         btnFlash.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
-                mObject.camera_flash = when(mObject.camera_flash == true) {
+                mObject.cameraFlash = when(mObject.cameraFlash == true) {
                     true -> {
                         it.setBackgroundResource(R.drawable.flash_off)
                         false
@@ -83,13 +93,13 @@ class CameraActivity : AppCompatActivity () {
             }
         }
 
-        barAlpha.progress = (mObject.camera_alpha * 100).toInt()
+        barAlpha.progress = (mObject.cameraAlpha * 100).toInt()
         barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
                 imgBackground.alpha = (i * 0.01).toFloat()
-                mObject.camera_alpha = (i * 0.01).toFloat()
+                mObject.cameraAlpha = (i * 0.01).toFloat()
             }
         })
 
@@ -106,7 +116,7 @@ class CameraActivity : AppCompatActivity () {
         btnChange.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
-                mObject.camera_direction = when (mObject.camera_direction == CameraCharacteristics.LENS_FACING_BACK) {
+                mObject.cameraDirection = when (mObject.cameraDirection == CameraCharacteristics.LENS_FACING_BACK) {
                     true -> CameraCharacteristics.LENS_FACING_FRONT
                     false -> CameraCharacteristics.LENS_FACING_BACK
                 }
@@ -234,7 +244,7 @@ class CameraActivity : AppCompatActivity () {
 
         file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")
 
-        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent), mObject.camera_direction))
+        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent), mObject.cameraDirection))
     }
 
     /**
@@ -388,7 +398,7 @@ class CameraActivity : AppCompatActivity () {
 
                 // We don't use a front facing camera in this sample.
                 val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (cameraDirection != null && cameraDirection != mObject.camera_direction) {
+                if (cameraDirection != null && cameraDirection != mObject.cameraDirection) {
                     continue
                 }
 
@@ -754,7 +764,7 @@ class CameraActivity : AppCompatActivity () {
     }
 
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder) {
-        if (flashSupported && mObject.camera_flash == true) {
+        if (flashSupported && mObject.cameraFlash == true) {
             requestBuilder.set(
                 CaptureRequest.CONTROL_AE_MODE,
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)

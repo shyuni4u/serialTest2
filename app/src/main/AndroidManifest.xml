@@ -10,7 +10,7 @@
 
     <application
             android:allowBackup="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/icon"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
@@ -30,5 +30,7 @@
         <activity android:name=".CameraActivity"/>
         <activity android:name=".GalleryActivity"/>
         <activity android:name=".GalleryDetail"/>
+
+        <receiver android:name=".EnzoNotificationPublisher"/>
     </application>
 </manifest>

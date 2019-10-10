@@ -79,50 +79,10 @@ class MainActivity : AppCompatActivity() {
         mRecyclerView.adapter = mAdapter
     }
 
-    /**
-     * remove category
-     * save refreshed info to setting.json
-     */
-    fun removeCategoryFragment(delName: String, isChecked: Boolean) {
-        /*
-        val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
-        val categoryInfoArray = Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
-        val list = ArrayList<LastPicture>()
-
-        var n = 0
-        while (n < categoryInfoArray.size) {
-            if (categoryInfoArray[n].title == delName) {
-                n += 1
-                continue
-            }
-            list.add(categoryInfoArray[n])
-            n += 1
-        }
-
-        settingFile.writeText(Gson().toJson(list))
-        //mCategoryFragmentAdapter.delItem(delName)
-         */
-        /*
-        mCategoryFragmentAdapter = CategoryFragmentAdapter(supportFragmentManager, makeParamList())
-        mViewPager = findViewById(R.id.lastImages)
-        mViewPager.adapter = mCategoryFragmentAdapter
-
-        if (isChecked) {
-            val sdcard: String = Environment.getExternalStorageState()
-            val rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-                true -> Environment.getRootDirectory()
-                false -> Environment.getExternalStorageDirectory()
-            }
-            Log.i(TAG, "Call setDirectoryEmpty")
-            setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/")
-        }
-        */
-    }
-
     fun openGallery(categoryInfo: LastPicture) {
         val intent = Intent(this, GalleryActivity::class.java)
         intent.putExtra("PARAM", categoryInfo)
-        startActivityForResult(intent, GALLERY_ACTIVITY_SUCCESS)
+        startActivityForResult(intent, CAMERA_ACTIVITY_SUCCESS)
     }
 
     fun openCamera(categoryInfo: LastPicture) {
@@ -163,17 +123,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (requestCode == RESULT_FIRST_USER) {
-            if (resultCode == CAMERA_ACTIVITY_SUCCESS) {
-                val resultObject = data!!.getSerializableExtra("RESULT_PARAM") as LastPicture
-                val categoryInfoArray = readSetting()
+        if (requestCode == CAMERA_ACTIVITY_SUCCESS && data != null) {
+            val resultObject = data.getSerializableExtra("RESULT_PARAM") as LastPicture
+            val categoryInfoArray = readSetting()
+            var updateIndex = 0
 
-                // find title
-                for (info in categoryInfoArray) {
-                    if (info.title == resultObject.title)   info.copy(resultObject)
+            // find title
+            for ((index, info) in categoryInfoArray.withIndex()) {
+                if (info.title == resultObject.title) {
+                    if (!resultObject.alarmState && !resultObject.flagCamera) {
+                        resultObject.flagCamera = true
+                        resultObject.alarmState = true
+                        resultObject.alarmMilliseconds = System.currentTimeMillis()
+                        scheduleNotification(this, resultObject.alarmMilliseconds, resultObject.title, resultObject.id)
+                    }
+                    info.copy(resultObject)
+                    updateIndex = index
                 }
-                writeSetting(categoryInfoArray)
             }
+            writeSetting(categoryInfoArray)
+            mAdapter.changeAlarmState(updateIndex)
+            mAdapter.notifyItemChanged(updateIndex)
         }
     }
 }

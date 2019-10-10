@@ -63,7 +63,7 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:padding="12dp"
-                android:src="@drawable/main_btn_notification"
+                android:src="@drawable/main_btn_notification_off"
                 android:scaleType="fitCenter"
                 android:adjustViewBounds="true"
                 android:background="@drawable/main_btn_common_background"
