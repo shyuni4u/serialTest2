@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.camera
 
 import android.util.Size
 import java.lang.Long.signum

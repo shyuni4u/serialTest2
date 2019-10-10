@@ -27,10 +27,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".CameraActivity"/>
-        <activity android:name=".GalleryActivity"/>
-        <activity android:name=".GalleryDetail"/>
+        <activity android:name=".camera.CameraActivity"/>
+        <activity android:name=".gallery.GalleryActivity"/>
+        <activity android:name=".gallery.GalleryDetail"/>
 
-        <receiver android:name=".EnzoNotificationPublisher"/>
+        <receiver android:name=".util.EnzoNotificationPublisher"/>
     </application>
 </manifest>

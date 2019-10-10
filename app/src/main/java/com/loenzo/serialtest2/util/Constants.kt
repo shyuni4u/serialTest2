@@ -17,7 +17,7 @@
 @file:JvmName("Constants")
 @file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.util
 
 import android.app.*
 import android.content.BroadcastReceiver
@@ -35,6 +35,9 @@ import android.provider.MediaStore
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.scale
 import com.google.gson.Gson
+import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.MainActivity
+import com.loenzo.serialtest2.R
 import java.io.File
 import kotlin.collections.ArrayList
 
@@ -62,7 +65,12 @@ fun writeSetting(list: Array<LastPicture>) {
 
     val settingFile = File(rootDir.absolutePath + "/setting.json")
     if (!settingFile.exists()) {
-        settingFile.writeText(Gson().toJson(listOf(LastPicture("TEMP", ""))))
+        settingFile.writeText(Gson().toJson(listOf(
+            LastPicture(
+                "TEMP",
+                ""
+            )
+        )))
     }
     settingFile.writeText(Gson().toJson(list))
 }
@@ -86,7 +94,12 @@ fun readSetting(): Array<LastPicture> {
 
     val settingFile = File(rootDir.absolutePath + "/setting.json")
     if (!settingFile.exists() ) {
-        settingFile.writeText(Gson().toJson(listOf(LastPicture("TEMP", ""))))
+        settingFile.writeText(Gson().toJson(listOf(
+            LastPicture(
+                "TEMP",
+                ""
+            )
+        )))
     }
     val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
     return Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)

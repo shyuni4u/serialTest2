@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2;
+package com.loenzo.serialtest2.encoder;
 
 import java.io.IOException;
 import java.io.OutputStream;

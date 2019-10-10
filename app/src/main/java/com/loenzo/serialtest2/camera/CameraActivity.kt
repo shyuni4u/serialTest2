@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.camera
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -22,6 +22,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.loenzo.serialtest2.*
+import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.util.APP_NAME
+import com.loenzo.serialtest2.util.CAMERA_ACTIVITY_SUCCESS
+import com.loenzo.serialtest2.util.getRecentFilePathFromCategoryName
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -55,7 +60,10 @@ class CameraActivity : AppCompatActivity () {
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        val recentFilePath = getRecentFilePathFromCategoryName(mObject.title, this)
+        val recentFilePath = getRecentFilePathFromCategoryName(
+            mObject.title,
+            this
+        )
 
         if (recentFilePath == null) {
             barAlpha.visibility = View.INVISIBLE
@@ -104,7 +112,12 @@ class CameraActivity : AppCompatActivity () {
         })
 
         Glide.with(this)
-            .load(getRecentFilePathFromCategoryName(mObject.title, this))
+            .load(
+                getRecentFilePathFromCategoryName(
+                    mObject.title,
+                    this
+                )
+            )
             .apply(RequestOptions().circleCrop())
             .thumbnail(0.1F)
             .into(imgRecent)
@@ -244,7 +257,15 @@ class CameraActivity : AppCompatActivity () {
 
         file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")
 
-        backgroundHandler?.post(ImageSaver(it.acquireNextImage(), file, this, this.findViewById(R.id.imgRecent), mObject.cameraDirection))
+        backgroundHandler?.post(
+            ImageSaver(
+                it.acquireNextImage(),
+                file,
+                this,
+                this.findViewById(R.id.imgRecent),
+                mObject.cameraDirection
+            )
+        )
     }
 
     /**
@@ -294,14 +315,16 @@ class CameraActivity : AppCompatActivity () {
                     if (aeState == null ||
                         aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                         aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
-                        state = STATE_WAITING_NON_PRECAPTURE
+                        state =
+                            STATE_WAITING_NON_PRECAPTURE
                     }
                 }
                 STATE_WAITING_NON_PRECAPTURE -> {
                     // CONTROL_AE_STATE can be null on some devices
                     val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
                     if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
-                        state = STATE_PICTURE_TAKEN
+                        state =
+                            STATE_PICTURE_TAKEN
                         captureStillPicture()
                     }
                 }
@@ -317,7 +340,8 @@ class CameraActivity : AppCompatActivity () {
                 // CONTROL_AE_STATE can be null on some devices
                 val aeState = result.get(CaptureResult.CONTROL_AE_STATE)
                 if (aeState == null || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                    state = STATE_PICTURE_TAKEN
+                    state =
+                        STATE_PICTURE_TAKEN
                     captureStillPicture()
                 } else {
                     runPrecaptureSequence()
@@ -368,7 +392,9 @@ class CameraActivity : AppCompatActivity () {
         if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
             Log.e(TAG, "childFragmentManager: FRAGMENT_DIALOG")
         } else {
-            requestPermissions(arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
+            requestPermissions(arrayOf(Manifest.permission.CAMERA),
+                REQUEST_CAMERA_PERMISSION
+            )
         }
     }
 
@@ -409,7 +435,8 @@ class CameraActivity : AppCompatActivity () {
                 // For still image captures, we use the largest available size.
                 val largest = Collections.max(
                     listOf(*map.getOutputSizes(ImageFormat.JPEG)),
-                    CompareSizesByArea())
+                    CompareSizesByArea()
+                )
                 imageReader = ImageReader.newInstance(largest.width, largest.height,
                     ImageFormat.JPEG, /*maxImages*/ 2).apply {
                     setOnImageAvailableListener(onImageAvailableListener, backgroundHandler)
@@ -430,16 +457,21 @@ class CameraActivity : AppCompatActivity () {
                 var maxPreviewWidth = if (swappedDimensions) displaySize.y else displaySize.x
                 var maxPreviewHeight = if (swappedDimensions) displaySize.x else displaySize.y
 
-                if (maxPreviewWidth > MAX_PREVIEW_WIDTH) maxPreviewWidth = MAX_PREVIEW_WIDTH
-                if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) maxPreviewHeight = MAX_PREVIEW_HEIGHT
+                if (maxPreviewWidth > MAX_PREVIEW_WIDTH) maxPreviewWidth =
+                    MAX_PREVIEW_WIDTH
+                if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) maxPreviewHeight =
+                    MAX_PREVIEW_HEIGHT
 
                 // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
                 // garbage capture data.
-                previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
-                    rotatedPreviewWidth, rotatedPreviewHeight,
-                    maxPreviewWidth, maxPreviewHeight,
-                    largest)
+                previewSize =
+                    chooseOptimalSize(
+                        map.getOutputSizes(SurfaceTexture::class.java),
+                        rotatedPreviewWidth, rotatedPreviewHeight,
+                        maxPreviewWidth, maxPreviewHeight,
+                        largest
+                    )
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -877,8 +909,12 @@ class CameraActivity : AppCompatActivity () {
             // Pick the smallest of those big enough. If there is no one big enough, pick the
             // largest of those not big enough.
             return when {
-                bigEnough.size > 0 -> Collections.min(bigEnough, CompareSizesByArea())
-                notBigEnough.size > 0 -> Collections.max(notBigEnough, CompareSizesByArea())
+                bigEnough.size > 0 -> Collections.min(bigEnough,
+                    CompareSizesByArea()
+                )
+                notBigEnough.size > 0 -> Collections.max(notBigEnough,
+                    CompareSizesByArea()
+                )
                 else -> {
                     Log.e(TAG, "Couldn't find any suitable preview size")
                     choices[0]

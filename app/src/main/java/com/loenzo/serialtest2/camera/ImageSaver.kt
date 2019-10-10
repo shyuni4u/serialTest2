@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.camera
 
 import android.content.Context
 import android.content.Intent
@@ -16,6 +16,7 @@ import android.widget.Toast
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.loenzo.serialtest2.util.getRotateBitmap
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -89,7 +90,13 @@ internal class ImageSaver(
                     ExifInterface.ORIENTATION_ROTATE_90-> 90
                     else -> 0
                 }
-                val flip = flipImage(getRotateBitmap(BitmapFactory.decodeFile(file.absolutePath), rotate, false))
+                val flip = flipImage(
+                    getRotateBitmap(
+                        BitmapFactory.decodeFile(
+                            file.absolutePath
+                        ), rotate, false
+                    )
+                )
                 try {
                     output = FileOutputStream(file).apply {
                         flip.compress(Bitmap.CompressFormat.JPEG, 100, this)

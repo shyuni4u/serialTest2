@@ -19,6 +19,9 @@ import android.widget.*
 import androidx.core.graphics.scale
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.loenzo.serialtest2.encoder.AnimatedGifEncoder
+import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.util.*
 import org.jcodec.api.android.AndroidSequenceEncoder
 import org.jcodec.common.io.NIOUtils
 import org.jcodec.common.model.Rational
@@ -64,7 +67,12 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         tempTextView = textView
 
         Glide.with(context)
-            .load(getRecentFilePathFromCategoryName(item.title, context))
+            .load(
+                getRecentFilePathFromCategoryName(
+                    item.title,
+                    context
+                )
+            )
             .thumbnail(0.1F)
             .into(imageView)
 
@@ -90,7 +98,12 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                 btnNotification.setImageResource(R.drawable.main_btn_notification_off)
                 notifyDataSetChanged()
             } else {    //On
-                scheduleNotification(context, data[position].alarmMilliseconds, data[position].title, data[position].id)
+                scheduleNotification(
+                    context,
+                    data[position].alarmMilliseconds,
+                    data[position].title,
+                    data[position].id
+                )
                 data[position].alarmState = true
                 btnNotification.setImageResource(R.drawable.main_btn_notification)
                 notifyDataSetChanged()
@@ -315,7 +328,10 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             var returnValue = -1
             if (params[0] != null) {
                 val temp = params[0]!!
-                val data = getRecentFilePathListFromCategoryName(temp.categoryName, context)
+                val data = getRecentFilePathListFromCategoryName(
+                    temp.categoryName,
+                    context
+                )
                 strCategory = temp.categoryName
 
                 if (data.size > 0) {

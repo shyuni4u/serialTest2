@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.gallery
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,6 +13,8 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.bumptech.glide.Glide
+import com.loenzo.serialtest2.R
+import com.loenzo.serialtest2.util.getNameFromPath
 
 class GalleryDetail : AppCompatActivity() {
     class SectionPagerAdapter(fm: FragmentManager, private val mList: ArrayList<PlaceholderFragment>) : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
@@ -62,7 +64,11 @@ class GalleryDetail : AppCompatActivity() {
 
         title = getNameFromPath(data[pos])
 
-        val mSectionsPagerAdapter = SectionPagerAdapter(supportFragmentManager, list)
+        val mSectionsPagerAdapter =
+            SectionPagerAdapter(
+                supportFragmentManager,
+                list
+            )
 
         val mViewPager: ViewPager = findViewById(R.id.viewPagerDetail)
 

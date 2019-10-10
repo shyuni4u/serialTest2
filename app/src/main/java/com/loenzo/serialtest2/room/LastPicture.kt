@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.room
 
 import android.hardware.camera2.CameraCharacteristics
 import java.io.Serializable

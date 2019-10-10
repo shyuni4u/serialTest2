@@ -12,6 +12,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.loenzo.serialtest2.camera.CameraActivity
+import com.loenzo.serialtest2.encoder.SnapHelperOneByOne
+import com.loenzo.serialtest2.gallery.GalleryActivity
+import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.util.*
 import android.Manifest.permission as _permission
 
 class MainActivity : AppCompatActivity() {
@@ -51,7 +56,9 @@ class MainActivity : AppCompatActivity() {
                 //permission denied
                 //show popup to request runtime permission
                 val arr = arrayOfNulls<String>(requests.size)
-                requestPermissions(requests.toArray(arr), PERMISSION_CODE)
+                requestPermissions(requests.toArray(arr),
+                    PERMISSION_CODE
+                )
             }
         }
     }
@@ -135,7 +142,12 @@ class MainActivity : AppCompatActivity() {
                         resultObject.flagCamera = true
                         resultObject.alarmState = true
                         resultObject.alarmMilliseconds = System.currentTimeMillis()
-                        scheduleNotification(this, resultObject.alarmMilliseconds, resultObject.title, resultObject.id)
+                        scheduleNotification(
+                            this,
+                            resultObject.alarmMilliseconds,
+                            resultObject.title,
+                            resultObject.id
+                        )
                     }
                     info.copy(resultObject)
                     updateIndex = index

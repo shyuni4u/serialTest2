@@ -1,10 +1,12 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.gallery
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.R
+import com.loenzo.serialtest2.util.getRecentFilePathListFromCategoryName
 
 class GalleryActivity : AppCompatActivity() {
     private lateinit var mObject: LastPicture
@@ -17,7 +19,8 @@ class GalleryActivity : AppCompatActivity() {
 
         mObject = intent.getSerializableExtra("PARAM") as LastPicture
 
-        val data = getRecentFilePathListFromCategoryName(mObject.title, this)
+        val data =
+            getRecentFilePathListFromCategoryName(mObject.title, this)
 
         //val snapHelper = SnapHelperOneByOne()
         mRecyclerView = findViewById(R.id.imgList)

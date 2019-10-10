@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2;
+package com.loenzo.serialtest2.encoder;
 
 /*
  * NeuQuant Neural-Net Quantization Algorithm

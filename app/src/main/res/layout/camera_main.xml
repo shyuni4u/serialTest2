@@ -6,12 +6,12 @@
         android:layout_height="fill_parent"
         android:background="@color/black">
 
-    <com.loenzo.serialtest2.AutoFitTextureView
+    <com.loenzo.serialtest2.camera.AutoFitTextureView
             android:id="@+id/textureView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-    <com.loenzo.serialtest2.AutoFitImageView
+    <com.loenzo.serialtest2.camera.AutoFitImageView
             android:id="@+id/imgBack"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

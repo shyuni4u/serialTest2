@@ -40,4 +40,5 @@ dependencies {
     implementation 'org.jcodec:jcodec:0.2.3'
     implementation 'org.jcodec:jcodec-android:0.2.3'
     implementation 'com.google.android.gms:play-services-ads:18.2.0'
+    implementation "android.arch.persistence.room:runtime:1.1.1"
 }
