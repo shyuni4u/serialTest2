@@ -1,11 +1,13 @@
 package com.loenzo.serialtest2.gallery
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.R
+import com.loenzo.serialtest2.util.CAMERA_ACTIVITY_SUCCESS
 import com.loenzo.serialtest2.util.getRecentFilePathListFromCategoryName
 
 class GalleryActivity : AppCompatActivity() {
@@ -30,5 +32,13 @@ class GalleryActivity : AppCompatActivity() {
 
         mAdapter = GalleryAdapter(this, data)
         mRecyclerView.adapter = mAdapter
+    }
+
+    override fun onBackPressed() {
+        val intent = Intent().apply {
+            putExtra("RESULT_PARAM", mObject)
+        }
+        setResult(CAMERA_ACTIVITY_SUCCESS, intent)
+        super.onBackPressed()
     }
 }

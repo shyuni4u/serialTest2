@@ -1,10 +1,14 @@
 package com.loenzo.serialtest2
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.*
 import android.view.Gravity
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,7 +19,9 @@ import com.google.android.gms.ads.MobileAds
 import com.loenzo.serialtest2.camera.CameraActivity
 import com.loenzo.serialtest2.encoder.SnapHelperOneByOne
 import com.loenzo.serialtest2.gallery.GalleryActivity
+import com.loenzo.serialtest2.help.HelpActivity
 import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.*
 import android.Manifest.permission as _permission
 
@@ -31,19 +37,69 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mRecyclerView: RecyclerView
     private lateinit var mAdapter: CategoryAdapter
 
+    private var pictureDb: LastPictureDB? = null
+    private var pictureList = listOf<LastPicture>()
+
+    private var prefs: SharedPreferences? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.content_main)
 
+        MobileAds.initialize(this) {}
+        val mAdView = findViewById<AdView>(R.id.adView)
+        val adRequest = AdRequest.Builder().build()
+        mAdView.loadAd(adRequest)
+
         getUsePermission()
         if (checkPermissions().isEmpty()) {
-            MobileAds.initialize(this) {}
-            val mAdView = findViewById<AdView>(R.id.adView)
-            val adRequest = AdRequest.Builder().build()
-            mAdView.loadAd(adRequest)
+            initSetting()
+        }
+    }
 
-            readSetting()
-            initCategory()
+    override fun onResume() {
+        super.onResume()
+        if (prefs != null) {
+            if (prefs!!.getBoolean("firstRun", true)) {
+                openHelp()
+                prefs!!.edit().putBoolean("firstRun", false).apply()
+            }
+        }
+    }
+
+    private fun initSetting() {
+        var newName = resources.getString(R.string.temp)
+        prefs = getSharedPreferences("com.loenzo.overcam", Context.MODE_PRIVATE)
+
+        if (prefs!!.getBoolean("firstRun", true)) {
+            val addCategoryName = EditText(this)
+            val builder = AlertDialog.Builder(this)
+
+            builder.setTitle(resources.getString(R.string.add_category_title))
+            builder.setView(addCategoryName)
+            builder.setPositiveButton(resources.getString(R.string.add)) { _, _ -> run {
+                    newName = addCategoryName.text.toString()
+                    pictureDb = LastPictureDB.getInstance(this, newName)
+                    DaoThread {
+                        pictureList = pictureDb?.lastPictureDao()?.getAll()!!
+                        initCategory()
+                    }
+                }
+            }
+            builder.setNegativeButton(resources.getString(R.string.cancel)) { _, _ -> run {
+                pictureDb = LastPictureDB.getInstance(this, newName)
+                DaoThread {
+                    pictureList = pictureDb?.lastPictureDao()?.getAll()!!
+                    initCategory()
+                }
+            } }
+            builder.setCancelable(false).create().show()
+        } else {
+            pictureDb = LastPictureDB.getInstance(this, newName)
+            DaoThread {
+                pictureList = pictureDb?.lastPictureDao()?.getAll()!!
+                initCategory()
+            }
         }
     }
 
@@ -76,14 +132,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initCategory() {
-        val snapHelper = SnapHelperOneByOne()
-        mRecyclerView = findViewById(R.id.lastImages)
-        mRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        mRecyclerView.setHasFixedSize(true)
-        snapHelper.attachToRecyclerView(mRecyclerView)
+        Handler(Looper.getMainLooper()).post {
+            val snapHelper = SnapHelperOneByOne()
+            mRecyclerView = findViewById(R.id.lastImages)
+            mRecyclerView.layoutManager =
+                LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+            mRecyclerView.setHasFixedSize(true)
+            snapHelper.attachToRecyclerView(mRecyclerView)
 
-        mAdapter = CategoryAdapter(this, readSetting().toCollection(ArrayList()), mRecyclerView)
-        mRecyclerView.adapter = mAdapter
+            mAdapter = CategoryAdapter(
+                this,
+                pictureList.toCollection(ArrayList()),
+                mRecyclerView,
+                pictureDb
+            )
+            mRecyclerView.adapter = mAdapter
+        }
     }
 
     fun openGallery(categoryInfo: LastPicture) {
@@ -98,14 +162,17 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, CAMERA_ACTIVITY_SUCCESS)
     }
 
+    fun openHelp() {
+        val intent = Intent(this, HelpActivity::class.java)
+        startActivity(intent)
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when(requestCode) {
             PERMISSION_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //permission from popup granted
-                    //pickImageFromGallery()
-                    readSetting()
-                    initCategory()
+                    initSetting()
                 } else {
                     //permission from popup denied
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).apply {
@@ -132,11 +199,11 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == CAMERA_ACTIVITY_SUCCESS && data != null) {
             val resultObject = data.getSerializableExtra("RESULT_PARAM") as LastPicture
-            val categoryInfoArray = readSetting()
+            DaoThread { pictureList = pictureDb?.lastPictureDao()?.getAll()!! }
             var updateIndex = 0
 
             // find title
-            for ((index, info) in categoryInfoArray.withIndex()) {
+            for ((index, info) in pictureList.withIndex()) {
                 if (info.title == resultObject.title) {
                     if (!resultObject.alarmState && !resultObject.flagCamera) {
                         resultObject.flagCamera = true
@@ -148,14 +215,19 @@ class MainActivity : AppCompatActivity() {
                             resultObject.title,
                             resultObject.id
                         )
+                        mAdapter.changeAlarmState(index)
                     }
-                    info.copy(resultObject)
                     updateIndex = index
                 }
             }
-            writeSetting(categoryInfoArray)
-            mAdapter.changeAlarmState(updateIndex)
+            DaoThread { pictureDb?.lastPictureDao()?.update(resultObject) }
             mAdapter.notifyItemChanged(updateIndex)
         }
+    }
+
+    override fun onDestroy() {
+        LastPictureDB.destroyInstance()
+        pictureDb = null
+        super.onDestroy()
     }
 }

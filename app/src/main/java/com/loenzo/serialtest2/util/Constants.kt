@@ -34,8 +34,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.scale
-import com.google.gson.Gson
-import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.MainActivity
 import com.loenzo.serialtest2.R
 import java.io.File
@@ -47,63 +45,6 @@ const val APP_NAME = "OverCam"
 const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1001
 const val SELECT_MEDIA_SUCCESS = 1002
-
-/**
- * convert & save json file
- * from [list]
- */
-fun writeSetting(list: Array<LastPicture>) {
-    val sdcard: String = Environment.getExternalStorageState()
-    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-        true -> Environment.getRootDirectory()
-        false -> Environment.getExternalStorageDirectory()
-    }
-    rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
-    if (!rootDir.exists()) {
-        rootDir.mkdirs()
-    }
-
-    val settingFile = File(rootDir.absolutePath + "/setting.json")
-    if (!settingFile.exists()) {
-        settingFile.writeText(Gson().toJson(listOf(
-            LastPicture(
-                "TEMP",
-                ""
-            )
-        )))
-    }
-    settingFile.writeText(Gson().toJson(list))
-}
-
-/**
- * read setting information
- * from setting.json file
- * if setting.json is not exist
- * make default info
- */
-fun readSetting(): Array<LastPicture> {
-    val sdcard: String = Environment.getExternalStorageState()
-    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-        true -> Environment.getRootDirectory()
-        false -> Environment.getExternalStorageDirectory()
-    }
-    rootDir = File(rootDir.absolutePath + "/$APP_NAME/")
-    if (!rootDir.exists()) {
-        rootDir.mkdirs()
-    }
-
-    val settingFile = File(rootDir.absolutePath + "/setting.json")
-    if (!settingFile.exists() ) {
-        settingFile.writeText(Gson().toJson(listOf(
-            LastPicture(
-                "TEMP",
-                ""
-            )
-        )))
-    }
-    val categoryInfoString = settingFile.bufferedReader().use { it.readText() }
-    return Gson().fromJson(categoryInfoString, Array<LastPicture>::class.java)
-}
 
 /**
  * return file name
@@ -141,7 +82,6 @@ fun getRecentFilePathFromCategoryName (paramName: String, context: Context): Str
             cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
         }
     }
-
     cursor.close()
     return returnPath
 }
@@ -239,6 +179,7 @@ fun scheduleNotification(context: Context, millisecond: Long, title: String, id:
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
+    scheduleNotificationStop(context, id)
 
     val builder = NotificationCompat.Builder(context, title)
     builder.setContentTitle(context.resources.getString(R.string.app_name))
@@ -282,8 +223,8 @@ class EnzoNotificationPublisher: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val notificationManager = (context!!.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
         val notification = intent!!.getParcelableExtra<Notification>(NOTIFICATION)
-        val id = intent.getIntExtra(ID, 0)
-        notificationManager.notify(id, notification)
+        val id = intent.getLongExtra(ID, 0)
+        notificationManager.notify(id.toInt(), notification)
     }
 
 }

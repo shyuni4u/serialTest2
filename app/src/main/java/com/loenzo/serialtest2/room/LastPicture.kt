@@ -1,40 +1,21 @@
 package com.loenzo.serialtest2.room
 
 import android.hardware.camera2.CameraCharacteristics
+import androidx.annotation.NonNull
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Ignore
+import androidx.room.PrimaryKey
 import java.io.Serializable
 
-class LastPicture(var title: String, var uri: String) : Serializable {
-    var id: Long = System.currentTimeMillis()
-    var option: String
-    var cameraFlash: Boolean
-    var cameraDirection: Int
-    var cameraAlpha: Float
-    var cameraRatio: Int
-    var alarmState: Boolean
-    var flagCamera: Boolean
-    var alarmMilliseconds: Long
-
-    init {
-        this.option = ""
-        this.cameraFlash = false
-        this.cameraDirection = CameraCharacteristics.LENS_FACING_BACK
-        this.cameraAlpha = 0.4F
-        this.cameraRatio = 0
-        this.alarmState = false
-        this.flagCamera = false
-        this.alarmMilliseconds = 0
-    }
-
-    fun copy (copy: LastPicture) {
-        this.title = copy.title
-        this.uri = copy.uri
-        this.option = copy.option
-        this.cameraFlash = copy.cameraFlash
-        this.cameraDirection = copy.cameraDirection
-        this.cameraAlpha = copy.cameraAlpha
-        this.cameraRatio = copy.cameraRatio
-        this.alarmState = copy.alarmState
-        this.flagCamera = copy.flagCamera
-        this.alarmMilliseconds = copy.alarmMilliseconds
-    }
+@Entity(tableName = "category")
+data class LastPicture(@NonNull @PrimaryKey(autoGenerate = true) var id: Long,
+                       @ColumnInfo(name = "title") var title: String,
+                       @ColumnInfo(name = "camera_flash") var cameraFlash: Boolean,
+                       @ColumnInfo(name = "camera_direction") var cameraDirection: Int,
+                       @ColumnInfo(name = "camera_alpha") var cameraAlpha: Float,
+                       @ColumnInfo(name = "alarm_state") var alarmState: Boolean,
+                       @ColumnInfo(name = "flag_camera") var flagCamera: Boolean,
+                       @ColumnInfo(name = "alarm_milliseconds") var alarmMilliseconds: Long) : Serializable {
+    constructor(title: String): this(0, title, false, CameraCharacteristics.LENS_FACING_BACK, 0.4F, false, false, 0)
 }

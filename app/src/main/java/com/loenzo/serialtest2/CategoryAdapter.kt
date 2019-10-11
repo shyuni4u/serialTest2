@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.loenzo.serialtest2.encoder.AnimatedGifEncoder
 import com.loenzo.serialtest2.room.LastPicture
+import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.*
 import org.jcodec.api.android.AndroidSequenceEncoder
 import org.jcodec.common.io.NIOUtils
@@ -32,7 +33,7 @@ import java.io.IOException
 import java.util.*
 import kotlin.collections.ArrayList
 
-class CategoryAdapter (private var context: Context, private var data: ArrayList<LastPicture>, private val recyclerView: RecyclerView):
+class CategoryAdapter (private var context: Context, private var data: ArrayList<LastPicture>, private val recyclerView: RecyclerView, private val pictureDb: LastPictureDB?):
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -66,54 +67,82 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         textView.text = item.title
         tempTextView = textView
 
+        /* rename *
+        textView.setOnClickListener {
+            val modifyName = EditText(context)
+            val builder = AlertDialog.Builder(context)
+
+            builder.setTitle(context.resources.getString(R.string.rename))
+            builder.setView(modifyName)
+            builder.setPositiveButton(context.resources.getString(R.string.done)
+            ) { _, _ -> run {
+                val newName = modifyName.text.toString()
+                var isDuplicated = false
+
+                // check newName exists
+                for (info in data) {
+                    if (info.title == newName) {
+                        Toast.makeText(context, context.resources.getString(R.string.duplicate_name), Toast.LENGTH_SHORT).apply {
+                            setGravity(Gravity.BOTTOM, 0, 100)
+                        }.show()
+                        isDuplicated = true
+                    }
+                }
+
+                if (!isDuplicated) {
+                    renameFolder(item.title, newName, context)
+                    item.title = newName
+                    notifyDataSetChanged()
+
+                    DaoThread { pictureDb?.lastPictureDao()?.update(item) }
+                }
+            } }
+            builder.setNegativeButton(context.resources.getString(R.string.cancel)
+            ) { _, _ -> run {} }
+
+            builder.show()
+        }
+        */
+
         Glide.with(context)
-            .load(
-                getRecentFilePathFromCategoryName(
-                    item.title,
-                    context
-                )
-            )
+            .load(getRecentFilePathFromCategoryName(item.title, context))
             .thumbnail(0.1F)
             .into(imageView)
 
         /**
          * set button click listener
+         * of [ItemHolder]
          */
         val btnNotification = holder.itemView.findViewById<ImageButton>(R.id.btnNotification)
         val btnAdd = holder.itemView.findViewById<ImageButton>(R.id.btnAdd)
         val btnRemove = holder.itemView.findViewById<ImageButton>(R.id.btnRemove)
+        val btnHelp= holder.itemView.findViewById<ImageButton>(R.id.btnHelp)
         val btnCamera = holder.itemView.findViewById<ImageButton>(R.id.btnCamera)
         val btnVideo = holder.itemView.findViewById<ImageButton>(R.id.btnVideo)
         val btnGif = holder.itemView.findViewById<ImageButton>(R.id.btnGif)
 
-        if (data[position].alarmState) {
+        if (item.alarmState) {
             btnNotification.setImageResource(R.drawable.main_btn_notification)
         } else {
             btnNotification.setImageResource(R.drawable.main_btn_notification_off)
         }
         btnNotification.setOnClickListener {
-            if (data[position].alarmState) {    //Off
-                scheduleNotificationStop(context, data[position].id)
-                data[position].alarmState = false
+            if (item.alarmState) {    //Off
+                scheduleNotificationStop(context, item.id)
+                item.alarmState = false
                 btnNotification.setImageResource(R.drawable.main_btn_notification_off)
                 notifyDataSetChanged()
             } else {    //On
-                scheduleNotification(
-                    context,
-                    data[position].alarmMilliseconds,
-                    data[position].title,
-                    data[position].id
-                )
-                data[position].alarmState = true
+                scheduleNotification(context, item.alarmMilliseconds, item.title, item.id)
+                item.alarmState = true
                 btnNotification.setImageResource(R.drawable.main_btn_notification)
                 notifyDataSetChanged()
             }
-            val array = arrayOfNulls<LastPicture>(data.size)
-            writeSetting(data.toArray(array))
+            DaoThread { pictureDb?.lastPictureDao()?.update(item) }
         }
         btnNotification.setOnLongClickListener {
             val originCalendar = Calendar.getInstance()
-            originCalendar.timeInMillis = data[position].alarmMilliseconds
+            originCalendar.timeInMillis = item.alarmMilliseconds
             if (originCalendar.timeInMillis.toInt() == 0) {
                 originCalendar.timeInMillis = System.currentTimeMillis()
             }
@@ -125,12 +154,12 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                     cal.set(Calendar.MINUTE, minute)
                     cal.set(Calendar.SECOND, 0)
                     cal.set(Calendar.MILLISECOND, 0)
-                    data[position].alarmMilliseconds = cal.timeInMillis
+                    item.alarmMilliseconds = cal.timeInMillis
+                    DaoThread { pictureDb?.lastPictureDao()?.update(item) }
                 }, originCalendar.get(Calendar.HOUR_OF_DAY), originCalendar.get(Calendar.MINUTE), true).apply { show() }
 
-            val array = arrayOfNulls<LastPicture>(data.size)
-            writeSetting(data.toArray(array))
-            false
+            item.alarmState != item.alarmState
+            true
         }
 
         btnAdd.setOnClickListener {
@@ -155,12 +184,11 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                 }
 
                 if (!isDuplicated) {
-                    data.add(LastPicture(newName, ""))
+                    data.add(LastPicture(newName))
                     notifyItemInserted(data.size)
                     recyclerView.smoothScrollToPosition(data.size)
 
-                    val array = arrayOfNulls<LastPicture>(data.size)
-                    writeSetting(data.toArray(array))
+                    DaoThread { pictureDb?.lastPictureDao()?.insert(LastPicture(newName)) }
                 }
             } }
             builder.setNegativeButton(context.resources.getString(R.string.cancel)
@@ -178,20 +206,11 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             builder.setView(check)
             builder.setPositiveButton(context.resources.getString(R.string.delete)
             ) { _, _ -> run {
-                var temp: LastPicture? = null
-                for(el in data) {
-                    if (el.title == item.title) {
-                        temp = el
-                    }
-                }
-
                 if (data.size > 1) {
-                    if (temp != null) data.remove(temp)
+                    DaoThread { pictureDb?.lastPictureDao()?.delete(item) }
+
+                    data.remove(item)
                     notifyItemRemoved(position)
-
-                    val array = arrayOfNulls<LastPicture>(data.size)
-                    writeSetting(data.toArray(array))
-
                     scheduleNotificationStop(context, item.id)
 
                     if (check.isChecked) {
@@ -202,12 +221,18 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                         }
                         setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/${item.title}")
                     }
+                } else {
+                    Toast.makeText(context, context.resources.getString(R.string.warning_category), Toast.LENGTH_SHORT).show()
                 }
             } }
             builder.setNegativeButton(context.resources.getString(R.string.cancel)
             ) { _, _ -> run {} }
 
             builder.show()
+        }
+
+        btnHelp.setOnClickListener {
+            (context as MainActivity).openHelp()
         }
 
         btnCamera.setOnClickListener {

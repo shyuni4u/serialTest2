@@ -30,6 +30,7 @@
         <activity android:name=".camera.CameraActivity"/>
         <activity android:name=".gallery.GalleryActivity"/>
         <activity android:name=".gallery.GalleryDetail"/>
+        <activity android:name=".help.HelpActivity"/>
 
         <receiver android:name=".util.EnzoNotificationPublisher"/>
     </application>
