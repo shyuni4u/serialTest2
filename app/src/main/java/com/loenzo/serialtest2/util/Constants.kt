@@ -169,10 +169,9 @@ fun getRotateBitmap(bitmap: Bitmap, degree: Int, useScale: Boolean): Bitmap {
 fun scheduleNotification(context: Context, millisecond: Long, title: String, id: Long) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val name = context.getString(R.string.app_name)
-        val descriptionText = "descriptionText"
         val importance = NotificationManager.IMPORTANCE_DEFAULT
         val channel = NotificationChannel(title, name, importance).apply {
-            description = descriptionText
+            description = title
         }
         // Register the channel with the system
         val notificationManager: NotificationManager =
@@ -204,7 +203,8 @@ fun scheduleNotification(context: Context, millisecond: Long, title: String, id:
     val pendingIntent = PendingIntent.getBroadcast(context, id.toInt(), notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT)
 
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond, AlarmManager.INTERVAL_DAY, pendingIntent)
+    //alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond + AlarmManager.INTERVAL_DAY, AlarmManager.INTERVAL_DAY, pendingIntent)
+    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond + 1000 * 5, AlarmManager.INTERVAL_DAY, pendingIntent)
 }
 
 fun scheduleNotificationStop(context: Context, id: Long) {
@@ -212,7 +212,10 @@ fun scheduleNotificationStop(context: Context, id: Long) {
     val pendingIntent = PendingIntent.getBroadcast(context, id.toInt(), notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT)
 
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    alarmManager.cancel(pendingIntent)
+    if (pendingIntent != null) {
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+    }
 }
 
 class EnzoNotificationPublisher: BroadcastReceiver() {

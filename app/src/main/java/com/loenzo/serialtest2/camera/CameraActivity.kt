@@ -796,7 +796,7 @@ class CameraActivity : AppCompatActivity () {
     }
 
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder) {
-        if (flashSupported && mObject.cameraFlash == true) {
+        if (flashSupported && mObject.cameraFlash) {
             requestBuilder.set(
                 CaptureRequest.CONTROL_AE_MODE,
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)

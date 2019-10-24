@@ -16,7 +16,7 @@
     <string name="include_images">사진 포함</string>
     <string name="notification_on">알람 ON</string>
     <string name="notification_off">알람 OFF</string>
-    <string name="check_time">Check the [%1$s] time</string>
+    <string name="check_time">[%1$s] 사진 찍을 시간입니다</string>
     <string name="apply">확인</string>
     <string name="allow">확인</string>
     <string name="done">확인</string>

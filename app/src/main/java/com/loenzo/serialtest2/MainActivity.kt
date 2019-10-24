@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.*
+import android.util.Log
 import android.view.Gravity
 import android.widget.EditText
 import android.widget.Toast
@@ -208,7 +209,7 @@ class MainActivity : AppCompatActivity() {
                     if (!resultObject.alarmState && !resultObject.flagCamera) {
                         resultObject.flagCamera = true
                         resultObject.alarmState = true
-                        resultObject.alarmMilliseconds = System.currentTimeMillis()
+                        resultObject.alarmMilliseconds = System.currentTimeMillis() - 5 * 60 * 1000
                         scheduleNotification(
                             this,
                             resultObject.alarmMilliseconds,
