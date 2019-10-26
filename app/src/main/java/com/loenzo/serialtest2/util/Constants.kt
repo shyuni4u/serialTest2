@@ -203,8 +203,7 @@ fun scheduleNotification(context: Context, millisecond: Long, title: String, id:
     val pendingIntent = PendingIntent.getBroadcast(context, id.toInt(), notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT)
 
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    //alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond + AlarmManager.INTERVAL_DAY, AlarmManager.INTERVAL_DAY, pendingIntent)
-    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond + 1000 * 5, AlarmManager.INTERVAL_DAY, pendingIntent)
+    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, millisecond + AlarmManager.INTERVAL_DAY, AlarmManager.INTERVAL_DAY, pendingIntent)
 }
 
 fun scheduleNotificationStop(context: Context, id: Long) {
