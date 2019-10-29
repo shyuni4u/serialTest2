@@ -25,13 +25,16 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
+import android.media.ExifInterface
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.scale
 import com.loenzo.serialtest2.MainActivity
@@ -161,6 +164,25 @@ fun getRotateBitmap(bitmap: Bitmap, degree: Int, useScale: Boolean): Bitmap {
     m.setRotate(degree.toFloat(), (scaledBitmap.width / 2).toFloat(), (scaledBitmap.height / 2).toFloat())
 
     return Bitmap.createBitmap(scaledBitmap, 0, 0, scaledBitmap.width, scaledBitmap.height, m, true)
+}
+
+/**
+ * rotate image in file info
+ */
+fun autoRotateFile(filePath: String): Bitmap {
+    val exif = ExifInterface(filePath)
+    val rotate = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+        ExifInterface.ORIENTATION_ROTATE_270 -> 270
+        ExifInterface.ORIENTATION_ROTATE_180-> 180
+        ExifInterface.ORIENTATION_ROTATE_90-> 90
+        else -> 0
+    }
+    val origin = getRotateBitmap(BitmapFactory.decodeFile(filePath), rotate, false)
+    return if (rotate == 90 || rotate == 270) {
+        origin.scale(720, 1280, false)
+    } else {
+        origin.scale(1280, 720, false)
+    }
 }
 
 /**

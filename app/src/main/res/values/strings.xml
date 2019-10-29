@@ -1,6 +1,5 @@
 <resources>
     <string name="admob_app_id">ca-app-pub-7797435335029081~8483730148</string>
-    <string name="ad_unit_id">ca-app-pub-7797435335029081/4899708352</string>
     <string name="app_name">OverCam</string>    <!-- 앱 이름 -->
     <string name="default_name">Default</string>    <!-- 디폴트 값 -->
     <string name="add_category_title">New Category</string>    <!-- 새 항목 메시지 -->

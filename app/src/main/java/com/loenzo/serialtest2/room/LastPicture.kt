@@ -4,11 +4,11 @@ import android.hardware.camera2.CameraCharacteristics
 import androidx.annotation.NonNull
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.io.Serializable
 
-@Entity(tableName = "category")
+@Entity(tableName = "category", indices = [Index(value = ["title"], unique = true)])
 data class LastPicture(@NonNull @PrimaryKey(autoGenerate = true) var id: Long,
                        @ColumnInfo(name = "title") var title: String,
                        @ColumnInfo(name = "camera_flash") var cameraFlash: Boolean,

@@ -6,17 +6,16 @@ import android.app.AlertDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Environment
 import android.text.InputType
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.core.graphics.scale
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.loenzo.serialtest2.encoder.AnimatedGifEncoder
@@ -66,43 +65,6 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         val textView  = holder.itemView.findViewById<TextView>(R.id.categoryName)
         textView.text = item.title
         tempTextView = textView
-
-        /* rename *
-        textView.setOnClickListener {
-            val modifyName = EditText(context)
-            val builder = AlertDialog.Builder(context)
-
-            builder.setTitle(context.resources.getString(R.string.rename))
-            builder.setView(modifyName)
-            builder.setPositiveButton(context.resources.getString(R.string.done)
-            ) { _, _ -> run {
-                val newName = modifyName.text.toString()
-                var isDuplicated = false
-
-                // check newName exists
-                for (info in data) {
-                    if (info.title == newName) {
-                        Toast.makeText(context, context.resources.getString(R.string.duplicate_name), Toast.LENGTH_SHORT).apply {
-                            setGravity(Gravity.BOTTOM, 0, 100)
-                        }.show()
-                        isDuplicated = true
-                    }
-                }
-
-                if (!isDuplicated) {
-                    renameFolder(item.title, newName, context)
-                    item.title = newName
-                    notifyDataSetChanged()
-
-                    DaoThread { pictureDb?.lastPictureDao()?.update(item) }
-                }
-            } }
-            builder.setNegativeButton(context.resources.getString(R.string.cancel)
-            ) { _, _ -> run {} }
-
-            builder.show()
-        }
-        */
 
         Glide.with(context)
             .load(getRecentFilePathFromCategoryName(item.title, context))
@@ -184,11 +146,12 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                 }
 
                 if (!isDuplicated) {
-                    data.add(LastPicture(newName))
+                    val temp = LastPicture(newName)
+                    DaoThread { pictureDb?.lastPictureDao()?.insert(temp) }
+
+                    data.add(temp)
                     notifyItemInserted(data.size)
                     recyclerView.smoothScrollToPosition(data.size)
-
-                    DaoThread { pictureDb?.lastPictureDao()?.insert(LastPicture(newName)) }
                 }
             } }
             builder.setNegativeButton(context.resources.getString(R.string.cancel)
@@ -207,11 +170,24 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             builder.setPositiveButton(context.resources.getString(R.string.delete)
             ) { _, _ -> run {
                 if (data.size > 1) {
-                    DaoThread { pictureDb?.lastPictureDao()?.delete(item) }
+                    DaoThread {
+                        val temp = pictureDb?.lastPictureDao()?.getAll()!!
+                        var tempItem: LastPicture? = null
+                        for (i in temp) {
+                            if (item.title == i.title) {
+                                tempItem = i
+                                break
+                            }
+                        }
 
-                    data.remove(item)
-                    notifyItemRemoved(position)
-                    scheduleNotificationStop(context, item.id)
+                        if (tempItem != null) {
+                            pictureDb.lastPictureDao().delete(tempItem)
+
+                            data.remove(item)
+                            notifyItemRemoved(position)
+                            scheduleNotificationStop(context, item.id)
+                        }
+                    }
 
                     if (check.isChecked) {
                         val sdcard: String = Environment.getExternalStorageState()
@@ -361,8 +337,14 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
 
                 if (data.size > 0) {
                     if (temp.type == MOVIE) {
-                        val rootDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-                        val filePath = rootDir.absolutePath + "/${temp.name}.mp4"
+                        var rootDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+                        var filePath = rootDir.absolutePath + "/${temp.name}.mp4"
+
+                        val checkDirectory = File(rootDir.absolutePath)
+                        if (!checkDirectory.exists()) {
+                            rootDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                            filePath = rootDir.absolutePath + "/${temp.name}.mp4"
+                        }
                         strName = "${temp.name}.mp4"
                         strPath = filePath
                         NIOUtils.writableFileChannel(filePath).use { fileChannel ->
@@ -374,11 +356,8 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                                     val nProgress = 100 * data.indexOf(it) / data.size
                                     publishProgress(nProgress)
                                     encoder.encodeImage(
-                                        BitmapFactory.decodeFile(it).scale(
-                                            1280,
-                                            720,
-                                            false
-                                        )
+                                        autoRotateFile(it)
+                                        //BitmapFactory.decodeFile(it).scale(1280, 720, false)
                                     )
                                 }
                                 encoder.finish()
@@ -401,7 +380,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                         strPath = filePath
 
                         for (img in data) {
-                            gifEncoder.addFrame(BitmapFactory.decodeFile(img).scale(1280, 720, false))
+                            gifEncoder.addFrame(autoRotateFile(img))
                             val nProgress = 100 * data.indexOf(img) / data.size
                             publishProgress(nProgress)
                         }
