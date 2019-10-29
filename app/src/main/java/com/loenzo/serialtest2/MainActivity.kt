@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.*
-import android.util.Log
 import android.view.Gravity
 import android.widget.EditText
 import android.widget.Toast
@@ -50,25 +49,6 @@ class MainActivity : AppCompatActivity() {
         val mAdView = findViewById<AdView>(R.id.adView)
         val adRequest = AdRequest.Builder().build()
         mAdView.loadAd(adRequest)
-
-        /*
-        mAdView.adListener = object: AdListener() {
-            override fun onAdLoaded() {
-                super.onAdLoaded()
-                Log.i("TEST", "onAdLoaded")
-            }
-
-            override fun onAdFailedToLoad(p0: Int) {
-                super.onAdFailedToLoad(p0)
-                Log.i("TEST", "ERROR_CODE_NO_FILL $p0, ${AdRequest.ERROR_CODE_NO_FILL}")
-            }
-
-            override fun onAdClosed() {
-                super.onAdClosed()
-                Log.i("TEST", "onAdClosed")
-            }
-        }
-         */
 
         getUsePermission()
         if (checkPermissions().isEmpty()) {

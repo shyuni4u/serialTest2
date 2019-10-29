@@ -19,6 +19,7 @@
 
 package com.loenzo.serialtest2.util
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -62,6 +63,7 @@ fun getNameFromPath (path: String): String {
  * setting folder & image
  * from argument title info
  */
+@SuppressLint("InlinedApi")
 fun getRecentFilePathFromCategoryName (paramName: String, context: Context): String? {
     val sdcard: String = Environment.getExternalStorageState()
     var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
@@ -93,6 +95,7 @@ fun getRecentFilePathFromCategoryName (paramName: String, context: Context): Str
  * get image path list
  * from argument title info
  */
+@SuppressLint("InlinedApi")
 fun getRecentFilePathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
     val sdcard: String = Environment.getExternalStorageState()
     var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {

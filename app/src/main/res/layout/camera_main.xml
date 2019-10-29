@@ -15,6 +15,7 @@
             android:id="@+id/imgBack"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:foreground="@drawable/plaid"
             android:background="@color/white_85"
             android:contentDescription="@string/none" />
 
@@ -54,6 +55,19 @@
                 android:background="@drawable/flash"
                 android:contentDescription="@string/none"
                 app:layout_constraintHorizontal_bias="0.1"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <ImageButton
+                android:id="@+id/btnPlaid"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/plaid_on"
+                android:contentDescription="@string/none"
+                app:layout_constraintHorizontal_bias="0.9"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent"

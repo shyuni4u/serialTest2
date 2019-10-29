@@ -55,6 +55,7 @@ class CameraActivity : AppCompatActivity () {
 
         imgBackground = this.findViewById(R.id.imgBack)
         val btnFlash: ImageButton = this.findViewById(R.id.btnFlash)
+        val btnPlaid: ImageButton = this.findViewById(R.id.btnPlaid)
         val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
         val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
@@ -78,14 +79,14 @@ class CameraActivity : AppCompatActivity () {
             imgBackground.alpha = mObject.cameraAlpha
         }
 
-        when(mObject.cameraFlash == true) {
+        when(mObject.cameraFlash) {
             true -> btnFlash.setBackgroundResource(R.drawable.flash)
             false -> btnFlash.setBackgroundResource(R.drawable.flash_off)
         }
         btnFlash.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
-                mObject.cameraFlash = when(mObject.cameraFlash == true) {
+                mObject.cameraFlash = when(mObject.cameraFlash) {
                     true -> {
                         it.setBackgroundResource(R.drawable.flash_off)
                         false
@@ -100,6 +101,21 @@ class CameraActivity : AppCompatActivity () {
                 textureView.surfaceTextureListener = surfaceTextureListener
             }
         }
+
+        btnPlaid.setOnClickListener {
+            when(imgBackground.foreground) {
+                null -> {
+                    btnPlaid.setBackgroundResource(R.drawable.plaid_on)
+                    imgBackground.foreground = getDrawable(R.drawable.plaid)
+                }
+                else -> {
+                    btnPlaid.setBackgroundResource(R.drawable.plaid_off)
+                    imgBackground.foreground = null
+                }
+            }
+        }
+
+
 
         barAlpha.progress = (mObject.cameraAlpha * 100).toInt()
         barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
