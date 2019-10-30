@@ -1,19 +1,21 @@
 package com.loenzo.serialtest2
 
-import android.app.Activity
-import android.app.AlertDialog
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.*
+import android.util.Log
 import android.view.Gravity
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.firebase.jobdispatcher.*
 import com.google.android.gms.ads.*
+import com.loenzo.serialtest2.alarm.AlarmBroadcastReceiver
 import com.loenzo.serialtest2.camera.CameraActivity
 import com.loenzo.serialtest2.encoder.SnapHelperOneByOne
 import com.loenzo.serialtest2.gallery.GalleryActivity
@@ -21,6 +23,7 @@ import com.loenzo.serialtest2.help.HelpActivity
 import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.*
+import kotlin.collections.ArrayList
 import android.Manifest.permission as _permission
 
 class MainActivity : AppCompatActivity() {
@@ -35,6 +38,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mRecyclerView: RecyclerView
     private lateinit var mAdapter: CategoryAdapter
 
+    private lateinit var mDispatcher: FirebaseJobDispatcher
+
     private var pictureDb: LastPictureDB? = null
     private var pictureList = listOf<LastPicture>()
 
@@ -48,7 +53,16 @@ class MainActivity : AppCompatActivity() {
 
         val mAdView = findViewById<AdView>(R.id.adView)
         val adRequest = AdRequest.Builder().build()
+
+        mAdView.adListener = object: AdListener() {
+            override fun onAdFailedToLoad(errorCode: Int) {
+                super.onAdFailedToLoad(errorCode)
+                Log.i("onAdFailedToLoad", "errorCode: $errorCode")
+            }
+        }
         mAdView.loadAd(adRequest)
+
+        mDispatcher = FirebaseJobDispatcher(GooglePlayDriver(this))
 
         getUsePermission()
         if (checkPermissions().isEmpty()) {
@@ -166,6 +180,47 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+
+    /**
+     * set notification
+     */
+    fun scheduleNotification(millisecond: Long, title: String, id: Long) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.app_name)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(title, name, importance).apply {
+                description = title
+            }
+            // Register the channel with the system
+            val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+        scheduleNotificationStop(title)
+
+        val jobParameters = Bundle()
+        jobParameters.putLong("millisecond", millisecond)
+        jobParameters.putLong("id", id)
+        jobParameters.putString("title", title)
+
+        val job = mDispatcher.newJobBuilder()
+            .setService(NotificationJobFireBaseService::class.java)
+            .setTag(title)
+            .setTrigger(Trigger.executionWindow(60 * 60 * 24, 60 * 60 * 24 + 10))
+            //.setTrigger(Trigger.executionWindow(0, 60 * 60 * 24))
+            .setRecurring(true)
+            .setReplaceCurrent(true)
+            .setLifetime(Lifetime.FOREVER)
+            .setExtras(jobParameters)
+            .setConstraints(Constraint.ON_ANY_NETWORK)
+            .setRetryStrategy(RetryStrategy.DEFAULT_EXPONENTIAL)
+            .build()
+        mDispatcher.mustSchedule(job)
+    }
+
+    fun scheduleNotificationStop(title: String) {
+        mDispatcher.cancel(title)
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when(requestCode) {
             PERMISSION_CODE -> {
@@ -209,7 +264,6 @@ class MainActivity : AppCompatActivity() {
                         resultObject.alarmState = true
                         resultObject.alarmMilliseconds = System.currentTimeMillis() - 5 * 60 * 1000
                         scheduleNotification(
-                            this,
                             resultObject.alarmMilliseconds,
                             resultObject.title,
                             resultObject.id
@@ -229,4 +283,31 @@ class MainActivity : AppCompatActivity() {
         pictureDb = null
         super.onDestroy()
     }
+}
+
+class NotificationJobFireBaseService : JobService() {
+    override fun onStopJob(job: JobParameters): Boolean {
+        Log.i("JobService", "onStopJob")
+        return false
+    }
+
+    override fun onStartJob(job: JobParameters): Boolean {
+        val millisecond = job.extras!!.get("millisecond") as Long
+        val id= job.extras!!.get("id") as Long
+        val title = job.extras!!.get("title") as String
+
+        val intent = Intent(this, AlarmBroadcastReceiver::class.java)
+        intent.putExtra(AlarmBroadcastReceiver.ID, id)
+        intent.putExtra(AlarmBroadcastReceiver.TITLE, title)
+
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT)
+        val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        //manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), pendingIntent)
+        manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millisecond, pendingIntent)
+
+        jobFinished(job, true)
+        return false
+    }
+
 }

@@ -41,11 +41,11 @@
     <string name="h_delete">항목 삭제</string>
     <string name="h_help">도움말</string>
     <string name="h_camera">카메라</string>
-    <string name="h_long_camera">갤러리</string>
+    <string name="h_long_camera">(길게 누르기) 갤러리</string>
     <string name="h_video">사진을 비디오로 전환</string>
-    <string name="h_long_video">동영상 폴더 열기</string>
+    <string name="h_long_video">(길게 누르기) 동영상 폴더 열기</string>
     <string name="h_gif">사진을 GIF로 전환</string>
-    <string name="h_long_gif">GIF 폴더 열기</string>
+    <string name="h_long_gif">(길게 누르기) GIF 폴더 열기</string>
     <string name="h_alarm">알람 On/Off</string>
-    <string name="h_long_alarm">시간 설정</string>
+    <string name="h_long_alarm">(길게 누르기) 시간 설정</string>
 </resources>

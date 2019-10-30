@@ -41,11 +41,11 @@
     <string name="h_delete">Delete Category</string>
     <string name="h_help">Help</string>
     <string name="h_camera">Camera</string>
-    <string name="h_long_camera">Open Gallery</string>
+    <string name="h_long_camera">(Long click) Open Gallery</string>
     <string name="h_video">Convert images to video</string>
-    <string name="h_long_video">Open Folder</string>
+    <string name="h_long_video">(Long click) Open Folder</string>
     <string name="h_gif">Convert images to gif</string>
-    <string name="h_long_gif">Open Folder</string>
+    <string name="h_long_gif">(Long click) Open Folder</string>
     <string name="h_alarm">Alarm On/Off</string>
-    <string name="h_long_alarm">Setting Time</string>
+    <string name="h_long_alarm">(Long click) Setting Time</string>
 </resources>

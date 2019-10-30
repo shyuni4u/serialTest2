@@ -35,6 +35,14 @@
         <activity android:name=".gallery.GalleryDetail"/>
         <activity android:name=".help.HelpActivity"/>
 
-        <receiver android:name=".util.EnzoNotificationPublisher"/>
+        <receiver android:name=".alarm.AlarmBroadcastReceiver"/>
+
+        <service
+                android:exported="false"
+                android:name=".NotificationJobFireBaseService">
+            <intent-filter>
+                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE"/>
+            </intent-filter>
+        </service>
     </application>
 </manifest>

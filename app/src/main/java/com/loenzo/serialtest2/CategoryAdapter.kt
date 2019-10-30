@@ -90,12 +90,12 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         }
         btnNotification.setOnClickListener {
             if (item.alarmState) {    //Off
-                scheduleNotificationStop(context, item.id)
+                (context as MainActivity).scheduleNotificationStop(item.title)
                 item.alarmState = false
                 btnNotification.setImageResource(R.drawable.main_btn_notification_off)
                 notifyDataSetChanged()
             } else {    //On
-                scheduleNotification(context, item.alarmMilliseconds, item.title, item.id)
+                (context as MainActivity).scheduleNotification(item.alarmMilliseconds, item.title, item.id)
                 item.alarmState = true
                 btnNotification.setImageResource(R.drawable.main_btn_notification)
                 notifyDataSetChanged()
@@ -185,7 +185,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
 
                             data.remove(item)
                             notifyItemRemoved(position)
-                            scheduleNotificationStop(context, item.id)
+                            (context as MainActivity).scheduleNotificationStop(item.title)
                         }
                     }
 
