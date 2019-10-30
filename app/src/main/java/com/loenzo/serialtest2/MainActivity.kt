@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.*
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -54,10 +55,13 @@ class MainActivity : AppCompatActivity() {
         val mAdView = findViewById<AdView>(R.id.adView)
         val adRequest = AdRequest.Builder().build()
 
+        val temp  = this
         mAdView.adListener = object: AdListener() {
             override fun onAdFailedToLoad(errorCode: Int) {
                 super.onAdFailedToLoad(errorCode)
                 Log.i("onAdFailedToLoad", "errorCode: $errorCode")
+                mAdView.visibility = View.INVISIBLE
+                //Toast.makeText(temp, "onAdFailedToLoad: $errorCode", Toast.LENGTH_SHORT).show()
             }
         }
         mAdView.loadAd(adRequest)
@@ -180,7 +184,6 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-
     /**
      * set notification
      */
@@ -262,7 +265,7 @@ class MainActivity : AppCompatActivity() {
                     if (!resultObject.alarmState && !resultObject.flagCamera) {
                         resultObject.flagCamera = true
                         resultObject.alarmState = true
-                        resultObject.alarmMilliseconds = System.currentTimeMillis() - 5 * 60 * 1000
+                        resultObject.alarmMilliseconds = System.currentTimeMillis()
                         scheduleNotification(
                             resultObject.alarmMilliseconds,
                             resultObject.title,
@@ -287,7 +290,6 @@ class MainActivity : AppCompatActivity() {
 
 class NotificationJobFireBaseService : JobService() {
     override fun onStopJob(job: JobParameters): Boolean {
-        Log.i("JobService", "onStopJob")
         return false
     }
 

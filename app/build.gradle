@@ -10,17 +10,29 @@ android {
         applicationId "com.loenzo.serialtest2"
         minSdkVersion 23
         targetSdkVersion 29
-        versionCode 8
-        versionName "1.07"
+        versionCode 9
+        versionName "1.08"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    signingConfigs {
+        releaseWithSignedKey {
+            storeFile file('OverCamKey.jks')
+            storePassword "tus5b6n7m&%"
+            keyAlias "key0"
+            keyPassword "890215"
+        }
     }
     buildTypes {
         debug {
+            debuggable true
             resValue("string", "ad_unit_id", "ca-app-pub-3940256099942544/6300978111")
             minifyEnabled false
             shrinkResources false
         }
         release {
+            signingConfig signingConfigs.releaseWithSignedKey
+
+            debuggable true
             resValue("string", "ad_unit_id", "ca-app-pub-7797435335029081/4899708352")
             minifyEnabled true
             shrinkResources true

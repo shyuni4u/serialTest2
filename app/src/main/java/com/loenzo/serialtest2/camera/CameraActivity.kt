@@ -55,7 +55,7 @@ class CameraActivity : AppCompatActivity () {
 
         imgBackground = this.findViewById(R.id.imgBack)
         val btnFlash: ImageButton = this.findViewById(R.id.btnFlash)
-        val btnPlaid: ImageButton = this.findViewById(R.id.btnPlaid)
+        //val btnPlaid: ImageButton = this.findViewById(R.id.btnPlaid)
         val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
         val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
@@ -68,10 +68,9 @@ class CameraActivity : AppCompatActivity () {
 
         if (recentFilePath == null) {
             barAlpha.visibility = View.INVISIBLE
-            imgBackground.visibility = View.INVISIBLE
+            imgBackground.background = null
         } else {
             barAlpha.visibility = View.VISIBLE
-            imgBackground.visibility = View.VISIBLE
             Glide.with(this)
                 .load(recentFilePath)
                 .thumbnail(0.1F)
@@ -102,6 +101,7 @@ class CameraActivity : AppCompatActivity () {
             }
         }
 
+        /*
         btnPlaid.setOnClickListener {
             when(imgBackground.foreground) {
                 null -> {
@@ -114,6 +114,7 @@ class CameraActivity : AppCompatActivity () {
                 }
             }
         }
+        */
 
 
 
