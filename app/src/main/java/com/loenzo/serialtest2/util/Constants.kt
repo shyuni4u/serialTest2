@@ -46,6 +46,7 @@ import kotlin.collections.ArrayList
 const val APP_NAME = "OverCam"
 
 // Permission code
+const val APPLICATION_SUCCESS = 9999
 const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1001
 const val SELECT_MEDIA_SUCCESS = 1002

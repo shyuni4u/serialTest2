@@ -31,6 +31,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".camera.CameraActivity"/>
+        <activity android:name=".category.CategoryActivity"/>
         <activity android:name=".gallery.GalleryActivity"/>
         <activity android:name=".gallery.GalleryDetail"/>
         <activity android:name=".help.HelpActivity"/>
@@ -39,7 +40,7 @@
 
         <service
                 android:exported="false"
-                android:name=".NotificationJobFireBaseService">
+                android:name=".category.NotificationJobFireBaseService">
             <intent-filter>
                 <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE"/>
             </intent-filter>

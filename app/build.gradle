@@ -14,25 +14,24 @@ android {
         versionName "1.08"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+    /*
     signingConfigs {
         releaseWithSignedKey {
             storeFile file('OverCamKey.jks')
-            storePassword "tus5b6n7m&%"
+            storePassword "tusxxxxx"
             keyAlias "key0"
-            keyPassword "890215"
+            keyPassword "8xxxxx"
         }
     }
+    */
     buildTypes {
         debug {
-            debuggable true
             resValue("string", "ad_unit_id", "ca-app-pub-3940256099942544/6300978111")
             minifyEnabled false
             shrinkResources false
         }
         release {
-            signingConfig signingConfigs.releaseWithSignedKey
-
-            debuggable true
+            //signingConfig signingConfigs.releaseWithSignedKey
             resValue("string", "ad_unit_id", "ca-app-pub-7797435335029081/4899708352")
             minifyEnabled true
             shrinkResources true

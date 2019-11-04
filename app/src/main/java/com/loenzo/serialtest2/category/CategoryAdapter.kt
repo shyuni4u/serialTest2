@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.category
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -10,7 +10,6 @@ import android.net.Uri
 import android.os.AsyncTask
 import android.os.Environment
 import android.text.InputType
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +17,8 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.loenzo.serialtest2.MainActivity
+import com.loenzo.serialtest2.R
 import com.loenzo.serialtest2.encoder.AnimatedGifEncoder
 import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.room.LastPictureDB
@@ -90,12 +91,12 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         }
         btnNotification.setOnClickListener {
             if (item.alarmState) {    //Off
-                (context as MainActivity).scheduleNotificationStop(item.title)
+                (context as CategoryActivity).scheduleNotificationStop(item.title)
                 item.alarmState = false
                 btnNotification.setImageResource(R.drawable.main_btn_notification_off)
                 notifyDataSetChanged()
             } else {    //On
-                (context as MainActivity).scheduleNotification(item.alarmMilliseconds, item.title, item.id)
+                (context as CategoryActivity).scheduleNotification(item.alarmMilliseconds, item.title, item.id)
                 item.alarmState = true
                 btnNotification.setImageResource(R.drawable.main_btn_notification)
                 notifyDataSetChanged()
@@ -185,7 +186,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
 
                             data.remove(item)
                             notifyItemRemoved(position)
-                            (context as MainActivity).scheduleNotificationStop(item.title)
+                            (context as CategoryActivity).scheduleNotificationStop(item.title)
                         }
                     }
 
@@ -208,14 +209,14 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
         }
 
         btnHelp.setOnClickListener {
-            (context as MainActivity).openHelp()
+            (context as CategoryActivity).openHelp()
         }
 
         btnCamera.setOnClickListener {
-            (context as MainActivity).openCamera(item)
+            (context as CategoryActivity).openCamera(item)
         }
         btnCamera.setOnLongClickListener {
-            (context as MainActivity).openGallery(item)
+            (context as CategoryActivity).openGallery(item)
             false
         }
 
@@ -242,7 +243,9 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             ) { _, _ -> run {
                 if (etName.text.toString() != "" && etFps.text.toString() != "") {
                     AsyncMakeVideo().execute(
-                        ParamVideo(item.title, etName.text.toString(), Integer.parseInt(etFps.text.toString()), MOVIE)
+                        ParamVideo(item.title, etName.text.toString(), Integer.parseInt(etFps.text.toString()),
+                            MOVIE
+                        )
                     )
                 }
             } }
@@ -290,7 +293,9 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             ) { _, _ -> run {
                 if (etName.text.toString() != "" && etFps.text.toString() != "") {
                     AsyncMakeVideo().execute(
-                        ParamVideo(item.title, etName.text.toString(), Integer.parseInt(etFps.text.toString()), GIF)
+                        ParamVideo(item.title, etName.text.toString(), Integer.parseInt(etFps.text.toString()),
+                            GIF
+                        )
                     )
                 }
             } }

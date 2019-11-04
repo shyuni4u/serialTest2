@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2
+package com.loenzo.serialtest2.category
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
