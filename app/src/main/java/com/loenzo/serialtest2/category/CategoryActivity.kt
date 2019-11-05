@@ -95,7 +95,7 @@ class CategoryActivity : AppCompatActivity() {    //  like static
             builder.setPositiveButton(resources.getString(R.string.add)) { _, _ -> run {
                 newName = addCategoryName.text.toString()
                 pictureDb = LastPictureDB.getInstance(this, newName)
-                DaoThread {
+                daoThread {
                     pictureList = pictureDb?.lastPictureDao()?.getAll()!!
                     initCategory()
                 }
@@ -103,7 +103,7 @@ class CategoryActivity : AppCompatActivity() {    //  like static
             }
             builder.setNegativeButton(resources.getString(R.string.cancel)) { _, _ -> run {
                 pictureDb = LastPictureDB.getInstance(this, newName)
-                DaoThread {
+                daoThread {
                     pictureList = pictureDb?.lastPictureDao()?.getAll()!!
                     initCategory()
                 }
@@ -111,7 +111,7 @@ class CategoryActivity : AppCompatActivity() {    //  like static
             builder.setCancelable(false).create().show()
         } else {
             pictureDb = LastPictureDB.getInstance(this, newName)
-            DaoThread {
+            daoThread {
                 pictureList = pictureDb?.lastPictureDao()?.getAll()!!
                 initCategory()
             }
@@ -254,7 +254,7 @@ class CategoryActivity : AppCompatActivity() {    //  like static
 
         if (requestCode == CAMERA_ACTIVITY_SUCCESS && data != null) {
             val resultObject = data.getSerializableExtra("RESULT_PARAM") as LastPicture
-            DaoThread { pictureList = pictureDb?.lastPictureDao()?.getAll()!! }
+            daoThread { pictureList = pictureDb?.lastPictureDao()?.getAll()!! }
             var updateIndex = 0
 
             // find title
@@ -274,7 +274,7 @@ class CategoryActivity : AppCompatActivity() {    //  like static
                     updateIndex = index
                 }
             }
-            DaoThread { pictureDb?.lastPictureDao()?.update(resultObject) }
+            daoThread { pictureDb?.lastPictureDao()?.update(resultObject) }
             mAdapter.notifyItemChanged(updateIndex)
         }
     }

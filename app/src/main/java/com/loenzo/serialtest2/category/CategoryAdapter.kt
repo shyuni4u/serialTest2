@@ -17,7 +17,6 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.loenzo.serialtest2.MainActivity
 import com.loenzo.serialtest2.R
 import com.loenzo.serialtest2.encoder.AnimatedGifEncoder
 import com.loenzo.serialtest2.room.LastPicture
@@ -101,7 +100,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                 btnNotification.setImageResource(R.drawable.main_btn_notification)
                 notifyDataSetChanged()
             }
-            DaoThread { pictureDb?.lastPictureDao()?.update(item) }
+            daoThread { pictureDb?.lastPictureDao()?.update(item) }
         }
         btnNotification.setOnLongClickListener {
             val originCalendar = Calendar.getInstance()
@@ -118,7 +117,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
                     cal.set(Calendar.SECOND, 0)
                     cal.set(Calendar.MILLISECOND, 0)
                     item.alarmMilliseconds = cal.timeInMillis
-                    DaoThread { pictureDb?.lastPictureDao()?.update(item) }
+                    daoThread { pictureDb?.lastPictureDao()?.update(item) }
                 }, originCalendar.get(Calendar.HOUR_OF_DAY), originCalendar.get(Calendar.MINUTE), true).apply { show() }
 
             item.alarmState != item.alarmState
@@ -148,7 +147,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
 
                 if (!isDuplicated) {
                     val temp = LastPicture(newName)
-                    DaoThread { pictureDb?.lastPictureDao()?.insert(temp) }
+                    daoThread { pictureDb?.lastPictureDao()?.insert(temp) }
 
                     data.add(temp)
                     notifyItemInserted(data.size)
@@ -171,7 +170,7 @@ class CategoryAdapter (private var context: Context, private var data: ArrayList
             builder.setPositiveButton(context.resources.getString(R.string.delete)
             ) { _, _ -> run {
                 if (data.size > 1) {
-                    DaoThread {
+                    daoThread {
                         val temp = pictureDb?.lastPictureDao()?.getAll()!!
                         var tempItem: LastPicture? = null
                         for (i in temp) {

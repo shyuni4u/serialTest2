@@ -48,4 +48,7 @@
     <string name="h_long_gif">(길게 누르기) GIF 폴더 열기</string>
     <string name="h_alarm">알람 On/Off</string>
     <string name="h_long_alarm">(길게 누르기) 시간 설정</string>
+
+    <string name="manual_app_info_string_1">Before/After사진을 전문가처럼 찍어보세요</string>
+    <string name="manual_app_info_string_2">사진들을 움짤/동영상으로 만들어보세요</string>
 </resources>

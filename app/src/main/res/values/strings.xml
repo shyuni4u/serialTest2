@@ -48,4 +48,7 @@
     <string name="h_long_gif">(Long click) Open Folder</string>
     <string name="h_alarm">Alarm On/Off</string>
     <string name="h_long_alarm">(Long click) Setting Time</string>
+
+    <string name="manual_app_info_string_1">Take a photo(Before/After) like a pro</string>
+    <string name="manual_app_info_string_2">Make your photos convert to gif/video</string>
 </resources>

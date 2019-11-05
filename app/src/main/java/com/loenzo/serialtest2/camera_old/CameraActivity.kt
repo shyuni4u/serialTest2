@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2.camera
+package com.loenzo.serialtest2.camera_old
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -23,15 +23,9 @@ import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.loenzo.serialtest2.*
-import com.loenzo.serialtest2.camera_old.AutoFitImageView
-import com.loenzo.serialtest2.camera_old.AutoFitTextureView
-import com.loenzo.serialtest2.camera_old.CompareSizesByArea
-import com.loenzo.serialtest2.camera_old.ImageSaver
 import com.loenzo.serialtest2.room.LastPicture
-import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.APP_NAME
 import com.loenzo.serialtest2.util.CAMERA_ACTIVITY_SUCCESS
-import com.loenzo.serialtest2.util.daoThread
 import com.loenzo.serialtest2.util.getRecentFilePathFromCategoryName
 import java.io.File
 import java.text.SimpleDateFormat
@@ -43,21 +37,12 @@ import kotlin.math.max
 
 class CameraActivity : AppCompatActivity () {
 
-    private var pictureDb: LastPictureDB? = null
-    private var pictureList = listOf<LastPicture>()
-
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.camera_main)
+        setContentView(R.layout.camera_main_old)
 
-        pictureDb = LastPictureDB.getInstance(this)
-        daoThread {
-            pictureList = pictureDb?.lastPictureDao()?.getAll()!!
-            mObject = pictureList.first()
-        }
-
-        //mObject = intent.getSerializableExtra("PARAM") as LastPicture
+        mObject = intent.getSerializableExtra("PARAM") as LastPicture
 
         textureView = this.findViewById(R.id.textureView)
 
@@ -65,9 +50,8 @@ class CameraActivity : AppCompatActivity () {
         val f = when (sdcard != Environment.MEDIA_MOUNTED) {
             true -> Environment.getRootDirectory()
             false -> Environment.getExternalStorageDirectory()
-            //mContext.getExternalFilesDir(null).getAbsolutePath();
         }
-        FILE_PATH = f.absolutePath + "/$APP_NAME/" + "TEST"
+        FILE_PATH = f.absolutePath + "/$APP_NAME/" + mObject.title
 
         imgBackground = this.findViewById(R.id.imgBack)
         val btnFlash: ImageButton = this.findViewById(R.id.btnFlash)
@@ -77,8 +61,11 @@ class CameraActivity : AppCompatActivity () {
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
-        /*
-        val recentFilePath = getRecentFilePathFromCategoryName(mObject.title, this)
+        val recentFilePath = getRecentFilePathFromCategoryName(
+            mObject.title,
+            this
+        )
+
         if (recentFilePath == null) {
             barAlpha.visibility = View.INVISIBLE
             imgBackground.background = null
@@ -90,14 +77,11 @@ class CameraActivity : AppCompatActivity () {
                 .into(imgBackground)
             imgBackground.alpha = mObject.cameraAlpha
         }
-         */
 
-        /*
         when(mObject.cameraFlash) {
             true -> btnFlash.setBackgroundResource(R.drawable.flash)
             false -> btnFlash.setBackgroundResource(R.drawable.flash_off)
         }
-        */
         btnFlash.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
@@ -134,7 +118,7 @@ class CameraActivity : AppCompatActivity () {
 
 
 
-        //barAlpha.progress = (mObject.cameraAlpha * 100).toInt()
+        barAlpha.progress = (mObject.cameraAlpha * 100).toInt()
         barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -144,7 +128,6 @@ class CameraActivity : AppCompatActivity () {
             }
         })
 
-        /*
         Glide.with(this)
             .load(
                 getRecentFilePathFromCategoryName(
@@ -155,7 +138,6 @@ class CameraActivity : AppCompatActivity () {
             .apply(RequestOptions().circleCrop())
             .thumbnail(0.1F)
             .into(imgRecent)
-        */
 
         btnCapture.setOnClickListener {
             lockFocus()

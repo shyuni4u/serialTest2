@@ -10,6 +10,6 @@ fun ioThread(f : () -> Unit) {
     IO_EXECUTOR.execute(f)
 }
 
-fun DaoThread(f : () -> Unit) {
+fun daoThread(f : () -> Unit) {
     DAO_EXECUTOR.execute(f)
 }
