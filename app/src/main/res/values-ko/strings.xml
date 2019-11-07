@@ -37,18 +37,19 @@
     <string name="temp">임시</string>
     <string name="none"> </string>
 
-    <string name="h_add">항목 추가</string>
-    <string name="h_delete">항목 삭제</string>
-    <string name="h_help">도움말</string>
-    <string name="h_camera">카메라</string>
-    <string name="h_long_camera">(길게 누르기) 갤러리</string>
-    <string name="h_video">사진을 비디오로 전환</string>
-    <string name="h_long_video">(길게 누르기) 동영상 폴더 열기</string>
-    <string name="h_gif">사진을 GIF로 전환</string>
-    <string name="h_long_gif">(길게 누르기) GIF 폴더 열기</string>
-    <string name="h_alarm">알람 On/Off</string>
-    <string name="h_long_alarm">(길게 누르기) 시간 설정</string>
+    <string name="close_app">한번 더 누르면 종료됩니다.</string>
+
+    <string name="manual_title_1">애플리케이션</string>
+    <string name="manual_title_2">카메라</string>
+    <string name="manual_title_3">주제</string>
+    <string name="manual_title_4">시작하기</string>
 
     <string name="manual_app_info_string_1">Before/After사진을 전문가처럼 찍어보세요</string>
     <string name="manual_app_info_string_2">사진들을 움짤/동영상으로 만들어보세요</string>
+
+    <string name="manual_first_info_string_1">어떤 주제의 사진을 찍으실건가요?</string>
+    <string name="manual_first_info_string_2">ex) 육아, 식물, 헬스</string>
+    <string name="manual_first_info_string_3">시작하기</string>
+
+    <string name="new_category">새 주제</string>
 </resources>

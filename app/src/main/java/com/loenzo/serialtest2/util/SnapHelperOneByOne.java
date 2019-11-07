@@ -1,4 +1,4 @@
-package com.loenzo.serialtest2.encoder;
+package com.loenzo.serialtest2.util;
 
 import android.view.View;
 

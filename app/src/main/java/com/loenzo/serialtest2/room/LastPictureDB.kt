@@ -14,7 +14,7 @@ abstract class LastPictureDB: RoomDatabase() {
     companion object {
         private var INSTANCE: LastPictureDB? = null
 
-        fun getInstance(context: Context, title: String = "TEMP"): LastPictureDB? {
+        fun getInstance(context: Context, title: String = "New"): LastPictureDB? {
             if (INSTANCE == null) {
                 synchronized(LastPictureDB::class) {
                     INSTANCE = Room.databaseBuilder(context.applicationContext, LastPictureDB::class.java, "category.db")

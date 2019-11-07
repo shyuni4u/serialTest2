@@ -45,6 +45,20 @@ import kotlin.collections.ArrayList
 
 const val APP_NAME = "OverCam"
 
+// Shared Preference
+const val SHARED_NAME = "CAM_INFO"
+
+// BackButton interval time
+const val CLOSE_INTERVAL_TIME = 1000 * 2
+
+// Menu state
+const val MAIN_STATE = 0
+const val CATEGORY_STATE = 1
+const val ALPHA_STATE = 2
+
+// Minimum swipe distance
+const val MIN_DISTANCE = 150
+
 // Permission code
 const val APPLICATION_SUCCESS = 9999
 const val PERMISSION_CODE = 1000

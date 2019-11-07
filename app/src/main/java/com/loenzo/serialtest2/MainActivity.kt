@@ -51,24 +51,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == APPLICATION_SUCCESS && data != null) {
-            finishAffinity()
-            moveTaskToBack(true)
-        }
-    }
-
     private fun applicationStart() {
-        prefs = getSharedPreferences("com.lorenzo.sp", Context.MODE_PRIVATE)
+        prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+
+        //  if first run then go to manuals
         if (prefs!!.getBoolean("skip_manual", false)) {
-            //prefs!!.edit().putBoolean("skip_manual", false).apply()
             val intent = Intent(this, CameraActivity::class.java)
-            startActivityForResult(intent, APPLICATION_SUCCESS)
+            startActivity(intent)
         } else {
             val intent = Intent(this, ManualActivity::class.java)
-            startActivityForResult(intent, APPLICATION_SUCCESS)
+            startActivity(intent)
         }
     }
 

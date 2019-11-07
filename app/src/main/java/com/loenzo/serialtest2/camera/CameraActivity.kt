@@ -3,77 +3,316 @@ package com.loenzo.serialtest2.camera
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.*
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.*
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
-import android.view.Surface
-import android.view.TextureView
-import android.view.View
+import android.view.*
 import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
+import androidx.recyclerview.widget.LinearSnapHelper
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import com.loenzo.serialtest2.*
-import com.loenzo.serialtest2.camera_old.AutoFitImageView
-import com.loenzo.serialtest2.camera_old.AutoFitTextureView
-import com.loenzo.serialtest2.camera_old.CompareSizesByArea
-import com.loenzo.serialtest2.camera_old.ImageSaver
+import com.loenzo.serialtest2.category.CategoryAdapter
 import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.room.LastPictureDB
-import com.loenzo.serialtest2.util.APP_NAME
-import com.loenzo.serialtest2.util.CAMERA_ACTIVITY_SUCCESS
-import com.loenzo.serialtest2.util.daoThread
-import com.loenzo.serialtest2.util.getRecentFilePathFromCategoryName
+import com.loenzo.serialtest2.util.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
+import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.roundToInt
+import kotlin.system.exitProcess
 
 class CameraActivity : AppCompatActivity () {
 
     private var pictureDb: LastPictureDB? = null
     private var pictureList = listOf<LastPicture>()
 
-    @RequiresApi(Build.VERSION_CODES.M)
+    private lateinit var list: ArrayList<LastPicture>
+
+    private lateinit var mRecyclerView: RecyclerView
+    private lateinit var mAdapter: CategoryAdapter
+
+    private var previousTime = 0L
+    private var menuState = 0
+    private var categoryPosition = 0
+
+    private var x1 = 0F
+    private var x2 = 0F
+
+    fun changeMenuFragment(state: Int) {
+        val fragment = when (state) {
+            MAIN_STATE -> MainMenuFragment()
+            CATEGORY_STATE -> CategoryMenuFragment()
+            ALPHA_STATE -> AlphaMenuFragment()
+            else -> MainMenuFragment()
+        }
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+            .addToBackStack(null)
+            .replace(R.id.camera_top_menu, fragment)
+            .commit()
+        menuState = state
+    }
+
+    fun addRecyclerViewItem(newName: String) {
+        var isDuplicated = false
+        for (info in pictureList) {
+            if (info.title == newName) {
+                Toast.makeText(this, resources.getString(R.string.duplicate_name), Toast.LENGTH_SHORT).apply {
+                    setGravity(Gravity.BOTTOM, 0, 100)
+                }.show()
+                isDuplicated = true
+            }
+        }
+
+        if (!isDuplicated) {
+            daoThread {
+                val temp = LastPicture(newName)
+                pictureDb?.lastPictureDao()?.insert(temp)!!   //  return row number
+                pictureList = pictureDb?.lastPictureDao()?.getAll()!!
+
+                list.add(temp)
+                Handler(Looper.getMainLooper()).post {
+                    mAdapter.notifyItemInserted(pictureList.size)
+                    mRecyclerView.smoothScrollToPosition(pictureList.size)
+                }
+            }
+        }
+    }
+
+    fun removeRecyclerViewItem(isChecked: Boolean) {
+        if (pictureList.size > 1) {
+            daoThread {
+                var delItem: LastPicture? = null
+                for (item in pictureList) {
+                    if (item.title == list[categoryPosition].title) {
+                        delItem = item
+                    }
+                }
+                pictureDb?.lastPictureDao()?.delete(delItem!!)
+                pictureList = pictureDb?.lastPictureDao()?.getAll()!!
+
+                list.remove(list[categoryPosition])
+                Handler(Looper.getMainLooper()).post {
+                    mAdapter.notifyItemRemoved(categoryPosition)
+                }
+            }
+            if (isChecked) {
+                val sdcard: String = Environment.getExternalStorageState()
+                val rootDir: File? = when (sdcard != Environment.MEDIA_MOUNTED) {
+                    true -> Environment.getRootDirectory()
+                    false -> getExternalFilesDir(null)
+                }
+                if (rootDir != null) {
+                    setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/${list[categoryPosition].title}")
+                }
+            }
+        } else {
+            Toast.makeText(this, resources.getString(R.string.warning_category), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun getRecentName(): String {
+        return list[categoryPosition].title
+    }
+
+    fun changeFlashSetting() {
+        val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+        prefsFlash = when (prefsFlash) {
+            true -> false
+            false -> true
+        }
+        prefs!!.edit().putBoolean("flash", prefsFlash).apply()
+        Handler(Looper.getMainLooper()).post {
+            val btnFlash = findViewById<ImageButton>(R.id.btnFlash)
+            if (prefsFlash) {
+                btnFlash.setImageResource(R.drawable.flash_on)
+            } else {
+                btnFlash.setImageResource(R.drawable.flash_off)
+            }
+        }
+        closeCamera()
+        if (textureView.isAvailable) {
+            openCamera(textureView.width, textureView.height)
+        } else {
+            textureView.surfaceTextureListener = surfaceTextureListener
+        }
+    }
+
+    fun changePlaidSetting() {
+        val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+        prefsPlaid = when (prefsPlaid) {
+            true -> false
+            false -> true
+        }
+        prefs!!.edit().putBoolean("plaid", prefsPlaid).apply()
+        Handler(Looper.getMainLooper()).post {
+            if (prefsPlaid) {
+                imgPlaid.background = resources.getDrawable(R.drawable.plaid, null)
+            } else {
+                imgPlaid.background = null
+            }
+        }
+    }
+
+    private fun getScreenWidth(): Int {
+        val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val display = wm.defaultDisplay
+        val size = Point()
+        display.getSize(size)
+
+        return size.x
+    }
+
+    private fun itemWidth(): Int {
+        // convert dp to pixel
+        // 100 = category_main.text_view_category.width = 100dp
+        return (100 * resources.displayMetrics.density + 0.5F).toInt()
+    }
+
+    inner class CustomLayoutManager(context: Context?, orientation: Int, reverseLayout: Boolean, private var parentWidth: Int, private var itemWidth: Int): LinearLayoutManager(context, orientation, reverseLayout) {
+
+        private val millisecondsPerInch = 150F
+
+        override fun getPaddingLeft(): Int {
+            return (parentWidth / 2f - itemWidth / 2).roundToInt()
+        }
+
+        override fun getPaddingRight(): Int {
+            return paddingLeft
+        }
+
+        override fun smoothScrollToPosition(
+            recyclerView: RecyclerView?,
+            state: RecyclerView.State?,
+            position: Int
+        ) {
+            val linearSmoothScroller = object: LinearSmoothScroller(recyclerView!!.context) {
+                override fun calculateSpeedPerPixel(displayMetrics: DisplayMetrics?): Float {
+                    return millisecondsPerInch / displayMetrics!!.densityDpi
+                }
+            }
+            linearSmoothScroller.targetPosition = position
+            startSmoothScroll(linearSmoothScroller)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.camera_main)
 
+        MobileAds.initialize(this) {}
+        val adView = findViewById<AdView>(R.id.adView)
+        val adRequest = AdRequest.Builder().build()
+        adView.loadAd(adRequest)
+
+        changeMenuFragment(MAIN_STATE)
+
+        val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+        prefsFlash = prefs!!.getBoolean("flash", true)
+        prefsPlaid = prefs.getBoolean("plaid", true)
+
+        val snapHelper = LinearSnapHelper()
+        val layoutManager = CustomLayoutManager(this, LinearLayoutManager.HORIZONTAL, false, getScreenWidth(), itemWidth())
+        mRecyclerView = findViewById(R.id.recycler_view_categories)
+        mRecyclerView.layoutManager = layoutManager
+        mRecyclerView.setHasFixedSize(true)
+        snapHelper.attachToRecyclerView(mRecyclerView)
+        mRecyclerView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                //super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val centerView = snapHelper.findSnapView(layoutManager)!!
+                    val pos = layoutManager.getPosition(centerView)
+                    categoryPosition = pos
+                    Log.e("Snapped Item: ", "pos: $pos")
+                }
+            }
+        })
+
         pictureDb = LastPictureDB.getInstance(this)
         daoThread {
             pictureList = pictureDb?.lastPictureDao()?.getAll()!!
+
+            list = pictureList.toCollection(ArrayList())
+            mAdapter = CategoryAdapter(this, list)
+            mRecyclerView.adapter = mAdapter
+
             mObject = pictureList.first()
         }
 
-        //mObject = intent.getSerializableExtra("PARAM") as LastPicture
+        textureView = findViewById(R.id.textureView)
 
-        textureView = this.findViewById(R.id.textureView)
+        /**
+         * recover top menu state [MAIN_STATE]
+         */
+        textureView.setOnClickListener {
+            if (menuState != MAIN_STATE) changeMenuFragment(MAIN_STATE)
+        }
+        /**
+         * when swiping [textureView] then move position of [mRecyclerView]
+         */
+        textureView.setOnTouchListener { _, event ->
+            when(event.action) {
+                MotionEvent.ACTION_DOWN -> x1 = event.x
+                MotionEvent.ACTION_UP -> {
+                    x2 = event.x
+                    val deltaX = x2 - x1
+                    val snapView = snapHelper.findSnapView(layoutManager)!!
+                    val snapPosition = layoutManager.getPosition(snapView)
+                    if (abs(deltaX) > MIN_DISTANCE && deltaX > 0) {
+                        if (snapPosition > 0) {
+                            mRecyclerView.smoothScrollToPosition(snapPosition - 1)
+                        }
+                    } else if (abs(deltaX) > MIN_DISTANCE && deltaX < 0) {
+                        if (snapPosition < pictureList.size) {
+                            mRecyclerView.smoothScrollToPosition(snapPosition + 1)
+                        }
+                    }
+                }
+            }
+            super.onTouchEvent(event)
+        }
 
         val sdcard: String = Environment.getExternalStorageState()
         val f = when (sdcard != Environment.MEDIA_MOUNTED) {
             true -> Environment.getRootDirectory()
-            false -> Environment.getExternalStorageDirectory()
-            //mContext.getExternalFilesDir(null).getAbsolutePath();
+            false -> getExternalFilesDir(Environment.DIRECTORY_DCIM)
         }
-        FILE_PATH = f.absolutePath + "/$APP_NAME/" + "TEST"
+        FILE_PATH = f!!.absolutePath + "/$APP_NAME/"
 
-        imgBackground = this.findViewById(R.id.imgBack)
-        val btnFlash: ImageButton = this.findViewById(R.id.btnFlash)
-        //val btnPlaid: ImageButton = this.findViewById(R.id.btnPlaid)
-        val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
-        val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
+        imgBackground = findViewById(R.id.imgBack)
+
+        /**
+         * setting [imgPlaid] background
+         */
+        imgPlaid = findViewById(R.id.imgPlaid)
+        if (prefsPlaid) {
+            imgPlaid.background = resources.getDrawable(R.drawable.plaid, null)
+        } else {
+            imgPlaid.background = null
+        }
+        //val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
+        //val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
         val btnCapture: Button = this.findViewById(R.id.btnCapture)
         val btnChange: ImageButton = this.findViewById(R.id.btnChange)
 
@@ -90,49 +329,6 @@ class CameraActivity : AppCompatActivity () {
                 .into(imgBackground)
             imgBackground.alpha = mObject.cameraAlpha
         }
-         */
-
-        /*
-        when(mObject.cameraFlash) {
-            true -> btnFlash.setBackgroundResource(R.drawable.flash)
-            false -> btnFlash.setBackgroundResource(R.drawable.flash_off)
-        }
-        */
-        btnFlash.setOnClickListener {
-            closeCamera()
-            if (textureView.isAvailable) {
-                mObject.cameraFlash = when(mObject.cameraFlash) {
-                    true -> {
-                        it.setBackgroundResource(R.drawable.flash_off)
-                        false
-                    }
-                    false -> {
-                        it.setBackgroundResource(R.drawable.flash)
-                        true
-                    }
-                }
-                openCamera(textureView.width, textureView.height)
-            } else {
-                textureView.surfaceTextureListener = surfaceTextureListener
-            }
-        }
-
-        /*
-        btnPlaid.setOnClickListener {
-            when(imgBackground.foreground) {
-                null -> {
-                    btnPlaid.setBackgroundResource(R.drawable.plaid_on)
-                    imgBackground.foreground = getDrawable(R.drawable.plaid)
-                }
-                else -> {
-                    btnPlaid.setBackgroundResource(R.drawable.plaid_off)
-                    imgBackground.foreground = null
-                }
-            }
-        }
-        */
-
-
 
         //barAlpha.progress = (mObject.cameraAlpha * 100).toInt()
         barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
@@ -140,11 +336,10 @@ class CameraActivity : AppCompatActivity () {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
             override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
                 imgBackground.alpha = (i * 0.01).toFloat()
-                mObject.cameraAlpha = (i * 0.01).toFloat()
+                //mObject.cameraAlpha = (i * 0.01).toFloat()
             }
         })
 
-        /*
         Glide.with(this)
             .load(
                 getRecentFilePathFromCategoryName(
@@ -164,10 +359,12 @@ class CameraActivity : AppCompatActivity () {
         btnChange.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
+                /*
                 mObject.cameraDirection = when (mObject.cameraDirection == CameraCharacteristics.LENS_FACING_BACK) {
                     true -> CameraCharacteristics.LENS_FACING_FRONT
                     false -> CameraCharacteristics.LENS_FACING_BACK
                 }
+                 */
                 openCamera(textureView.width, textureView.height)
             } else {
                 textureView.surfaceTextureListener = surfaceTextureListener
@@ -176,11 +373,21 @@ class CameraActivity : AppCompatActivity () {
     }
 
     override fun onBackPressed() {
-        val intent = Intent().apply {
-            putExtra("RESULT_PARAM", mObject)
+        if (menuState == MAIN_STATE) {
+            val currentTime = System.currentTimeMillis()
+            if ((currentTime - previousTime) <= CLOSE_INTERVAL_TIME) {
+                closeCamera()
+                finishAffinity()
+                moveTaskToBack(true)
+                exitProcess(0)
+            } else {
+                previousTime = currentTime
+                Toast.makeText(this, getString(R.string.close_app), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            menuState = MAIN_STATE
+            changeMenuFragment(MAIN_STATE)
         }
-        setResult(CAMERA_ACTIVITY_SUCCESS, intent)
-        super.onBackPressed()
     }
 
     override fun onDestroy() {
@@ -221,6 +428,7 @@ class CameraActivity : AppCompatActivity () {
      * An [ImageView] for background
      */
     private lateinit var imgBackground: AutoFitImageView
+    private lateinit var imgPlaid: ImageView
 
     /**
      * A [CameraCaptureSession] for camera preview.
@@ -279,7 +487,6 @@ class CameraActivity : AppCompatActivity () {
     /**
      * This is the output file for our picture.
      */
-    private lateinit var file: File
 
     /**
      * This a callback object for the [ImageReader]. "onImageAvailable" will be called when a
@@ -290,15 +497,20 @@ class CameraActivity : AppCompatActivity () {
         val sdf = SimpleDateFormat("yyMMddhhmmss")
         val currentDate = sdf.format(Date())
 
-        file = File(FILE_PATH, mObject.title + "_$currentDate.jpg")
+        val dir = File(FILE_PATH + list[categoryPosition].title)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        val file = File(dir, mObject.title + "_$currentDate.jpg")
 
         backgroundHandler?.post(
             ImageSaver(
                 it.acquireNextImage(),
                 file,
                 this,
-                this.findViewById(R.id.imgRecent),
-                mObject.cameraDirection
+                findViewById(R.id.imgRecent),
+                CameraCharacteristics.LENS_FACING_FRONT
+                //mObject.cameraDirection
             )
         )
     }
@@ -459,9 +671,11 @@ class CameraActivity : AppCompatActivity () {
 
                 // We don't use a front facing camera in this sample.
                 val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
+                /*
                 if (cameraDirection != null && cameraDirection != mObject.cameraDirection) {
                     continue
                 }
+                 */
 
                 val map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
@@ -511,10 +725,10 @@ class CameraActivity : AppCompatActivity () {
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     textureView.setAspectRatio(previewSize.width, previewSize.height)
-                    imgBackground.setAspectRatio(previewSize.width, previewSize.height)
+                    imgBackground.setAspectRatio(previewSize.width, previewSize.height, imgPlaid)
                 } else {
                     textureView.setAspectRatio(previewSize.height, previewSize.width)
-                    imgBackground.setAspectRatio(previewSize.height, previewSize.width)
+                    imgBackground.setAspectRatio(previewSize.height, previewSize.width, imgPlaid)
                 }
 
                 // Check if the flash is supported.
@@ -831,7 +1045,7 @@ class CameraActivity : AppCompatActivity () {
     }
 
     private fun setAutoFlash(requestBuilder: CaptureRequest.Builder) {
-        if (flashSupported && mObject.cameraFlash) {
+        if (flashSupported && prefsFlash) {
             requestBuilder.set(
                 CaptureRequest.CONTROL_AE_MODE,
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
@@ -839,6 +1053,8 @@ class CameraActivity : AppCompatActivity () {
     }
 
     companion object {
+        var prefsFlash = true
+        var prefsPlaid = true
 
         /**
          * Conversion from screen rotation to JPEG orientation.

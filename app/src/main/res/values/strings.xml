@@ -37,18 +37,20 @@
     <string name="temp">TEMP</string>
     <string name="none"> </string>
 
-    <string name="h_add">Add Category</string>
-    <string name="h_delete">Delete Category</string>
-    <string name="h_help">Help</string>
-    <string name="h_camera">Camera</string>
-    <string name="h_long_camera">(Long click) Open Gallery</string>
-    <string name="h_video">Convert images to video</string>
-    <string name="h_long_video">(Long click) Open Folder</string>
-    <string name="h_gif">Convert images to gif</string>
-    <string name="h_long_gif">(Long click) Open Folder</string>
-    <string name="h_alarm">Alarm On/Off</string>
-    <string name="h_long_alarm">(Long click) Setting Time</string>
+    <string name="close_app">Please click BACK again to exit.</string>
+
+    <string name="manual_title_1">Application</string>
+    <string name="manual_title_2">Camera</string>
+    <string name="manual_title_3">Category</string>
+    <string name="manual_title_4">Start</string>
 
     <string name="manual_app_info_string_1">Take a photo(Before/After) like a pro</string>
     <string name="manual_app_info_string_2">Make your photos convert to gif/video</string>
+
+    <string name="manual_first_info_string_1">What subject will you take pictures on?</string>
+    <string name="manual_first_info_string_2">ex) Parenting, Plant, Work out</string>
+    <string name="manual_first_info_string_3">Start</string>
+
+    <string name="new_category">New Subject</string>
+
 </resources>

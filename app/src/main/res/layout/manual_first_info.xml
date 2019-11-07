@@ -11,31 +11,38 @@
             android:layout_marginBottom="60dp"
             android:layout_marginStart="30dp"
             android:textColor="@color/white_90"
-            android:text="@string/manual_title_1"/>
-
-    <ImageView
-            android:id="@+id/image_manual_app_info"
-            android:layout_width="300dp"
-            android:layout_height="300dp"
-            android:layout_gravity="center"
-            android:padding="1dp"
-            android:background="@drawable/round_image_5dp"
-            android:contentDescription="@string/none"/>
+            android:text="@string/manual_title_4"/>
 
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="40dp"
+            android:layout_marginBottom="60dp"
             android:textColor="@color/white"
-            android:text="@string/manual_app_info_string_1"/>
+            android:textSize="20sp"
+            android:text="@string/manual_first_info_string_1"/>
 
-    <TextView
+    <EditText
+            android:id="@+id/edit_new_name"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="200dp"
+            android:layout_gravity="center"
+            android:inputType="text"
+            android:importantForAutofill="no"
+            android:textColor="@color/white"
+            android:hint="@string/manual_first_info_string_2"
+            android:theme="@style/EditTheme"/>
+
+    <Button
+            android:id="@+id/button_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="40dp"
+            android:background="@drawable/bg_border_button"
+            android:text="@string/manual_first_info_string_3"
             android:textColor="@color/white"
-            android:text="@string/manual_app_info_string_2"/>
+            android:textSize="16sp"/>
 
 </LinearLayout>

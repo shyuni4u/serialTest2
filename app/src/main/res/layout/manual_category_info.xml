@@ -11,7 +11,7 @@
             android:layout_marginBottom="60dp"
             android:layout_marginStart="30dp"
             android:textColor="@color/white_90"
-            android:text="@string/manual_title_2"/>
+            android:text="@string/manual_title_3"/>
 
     <ImageView
             android:id="@+id/image_manual_app_info"
@@ -28,10 +28,7 @@
             android:layout_marginStart="10dp"
             android:textColor="@color/white"
             android:text="@string/none"
-            />
-            <!--
-            android:drawableStart="@drawable"
-            android:drawablePadding="15dp"
-            -->
+            android:drawableStart="@drawable/ruler"
+            android:drawablePadding="15dp"/>
 
 </LinearLayout>

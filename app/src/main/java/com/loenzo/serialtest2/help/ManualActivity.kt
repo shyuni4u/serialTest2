@@ -2,12 +2,14 @@ package com.loenzo.serialtest2.help
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -21,11 +23,14 @@ import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.tabs.TabLayout
 import com.loenzo.serialtest2.R
 import com.loenzo.serialtest2.camera.CameraActivity
-import com.loenzo.serialtest2.util.APPLICATION_SUCCESS
+import com.loenzo.serialtest2.room.LastPictureDB
+import com.loenzo.serialtest2.util.CLOSE_INTERVAL_TIME
+import com.loenzo.serialtest2.util.SHARED_NAME
+import kotlin.system.exitProcess
 
 class ManualActivity : AppCompatActivity() {
 
-    private var prefs: SharedPreferences? = null
+    private var previousTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,10 +38,11 @@ class ManualActivity : AppCompatActivity() {
 
         val list = ArrayList<ManualFragment>()
 
-        prefs = getSharedPreferences("com.lorenzo.sp", Context.MODE_PRIVATE)
         list.add(ManualFragment(R.layout.manual_app_info))
         list.add(ManualFragment(R.layout.manual_camera_info))
         list.add(ManualFragment(R.layout.manual_category_info))
+
+        val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
         if (!prefs!!.getBoolean("skip_manual", false)) {
             list.add(ManualFragment(R.layout.manual_first_info))
         }
@@ -51,11 +57,22 @@ class ManualActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        val intent = Intent().apply {
-            putExtra("RESULT_PARAM", "finish")
+        val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+        if (prefs!!.getBoolean("skip_manual", false)) {
+            //  from CameraActivity
+            super.onBackPressed()
+        } else {
+            //  from MainActivity
+            val currentTime = System.currentTimeMillis()
+            if ((currentTime - previousTime) <= CLOSE_INTERVAL_TIME) {
+                finishAffinity()
+                moveTaskToBack(true)
+                exitProcess(0)
+            } else {
+                previousTime = currentTime
+                Toast.makeText(this, getString(R.string.close_app), Toast.LENGTH_SHORT).show()
+            }
         }
-        setResult(APPLICATION_SUCCESS, intent)
-        super.onBackPressed()
     }
 
     inner class ManualFragmentAdapter(fm: FragmentManager, behavior: Int, private var list: ArrayList<ManualFragment>): FragmentPagerAdapter(fm, behavior) {
@@ -77,6 +94,7 @@ class ManualActivity : AppCompatActivity() {
             super.onViewCreated(view, savedInstanceState)
             val requestOptions = RequestOptions().transform(CenterCrop(), RoundedCorners(16))
             if (rId == R.layout.manual_app_info) {
+                //  for loading round image
                 val imageView = view.findViewById<ImageView>(R.id.image_manual_app_info)
                 Glide.with(this)
                     .load(resources.getDrawable(R.drawable.manual_app_info, null))
@@ -84,7 +102,32 @@ class ManualActivity : AppCompatActivity() {
                     .apply(requestOptions)
                     .into(imageView)
             } else if(rId == R.layout.manual_first_info) {
-                //prefs!!.edit().putBoolean("skip_manual", false).apply()
+                val editText = view.findViewById<EditText>(R.id.edit_new_name)
+                val button = view.findViewById<Button>(R.id.button_start)
+
+                button.setOnClickListener {
+                    val newName = when(editText.text.toString() != "") {
+                        true -> editText.text.toString()
+                        false -> resources.getString(R.string.new_category)
+                    }
+
+                    //  set Room database
+                    LastPictureDB.getInstance(view.context, newName)
+
+                    //  check first running
+                    val prefs = view.context.getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+                    prefs!!.edit().putBoolean("skip_manual", true).apply()
+
+                    val del = view.context.getSharedPreferences("com.lorenzo.sp", Context.MODE_PRIVATE)
+                    del!!.edit().clear().apply()
+
+                    //  go to CameraActivity
+                    val intent = Intent(view.context, CameraActivity::class.java)
+                    startActivity(intent)
+
+                    //  close Room database
+                    LastPictureDB.destroyInstance()
+                }
             }
         }
     }

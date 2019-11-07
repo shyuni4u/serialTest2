@@ -46,4 +46,9 @@ class AutoFitTextureView @JvmOverloads constructor(
         }
     }
 
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
 }

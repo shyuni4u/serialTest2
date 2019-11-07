@@ -10,7 +10,7 @@ interface LastPictureDao {
     fun getAll(): List<LastPicture>
 
     @Insert(onConflict = REPLACE)
-    fun insert(item: LastPicture)
+    fun insert(item: LastPicture): Long
 
     @Delete
     fun delete(item: LastPicture)
