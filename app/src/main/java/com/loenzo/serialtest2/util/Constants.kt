@@ -22,6 +22,7 @@ package com.loenzo.serialtest2.util
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.BroadcastReceiver
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
@@ -30,17 +31,25 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
 import android.media.ExifInterface
+import android.media.Image
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.scale
 import com.loenzo.serialtest2.MainActivity
 import com.loenzo.serialtest2.R
+import com.loenzo.serialtest2.camera.ImageSaver
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
 import kotlin.collections.ArrayList
 
 const val APP_NAME = "OverCam"

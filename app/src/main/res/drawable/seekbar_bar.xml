@@ -3,7 +3,7 @@
     <!--시크바 배경-->
     <item android:id="@android:id/background">
         <shape android:shape="line">
-            <stroke android:width="2dp" android:color="@color/white_30"/>
+            <stroke android:width="5dp" android:color="@color/white_30"/>
         </shape>
     </item>
 
@@ -11,7 +11,7 @@
     <item android:id="@android:id/progress" >
         <clip>
             <shape android:shape="line">
-                <stroke android:width="2dp" android:color="@color/white_60"/>
+                <stroke android:width="5dp" android:color="@color/white_60"/>
             </shape>
         </clip>
     </item>

@@ -9,6 +9,7 @@ import android.graphics.*
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.*
+import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
@@ -54,6 +55,8 @@ class CameraActivity : AppCompatActivity () {
     private var previousTime = 0L
     private var menuState = 0
     private var categoryPosition = 0
+
+    private var scrollDx = 0
 
     private var x1 = 0F
     private var x2 = 0F
@@ -114,6 +117,8 @@ class CameraActivity : AppCompatActivity () {
                 list.remove(list[categoryPosition])
                 Handler(Looper.getMainLooper()).post {
                     mAdapter.notifyItemRemoved(categoryPosition)
+                    if (categoryPosition > 0) categoryPosition -= 1
+                    changeCategoryPosition()
                 }
             }
             if (isChecked) {
@@ -172,6 +177,10 @@ class CameraActivity : AppCompatActivity () {
                 imgPlaid.background = null
             }
         }
+    }
+
+    private fun changeCategoryPosition(pos: Int = categoryPosition) {
+        Log.e("Snapped Item: ", "pos: $pos")
     }
 
     private fun getScreenWidth(): Int {
@@ -238,13 +247,20 @@ class CameraActivity : AppCompatActivity () {
         mRecyclerView.setHasFixedSize(true)
         snapHelper.attachToRecyclerView(mRecyclerView)
         mRecyclerView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (abs(scrollDx - dx) > 100) {
+                    onScrollStateChanged(recyclerView, RecyclerView.SCROLL_STATE_IDLE)
+                }
+                scrollDx = dx
+            }
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                //super.onScrollStateChanged(recyclerView, newState)
+                changeMenuFragment(MAIN_STATE)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     val centerView = snapHelper.findSnapView(layoutManager)!!
                     val pos = layoutManager.getPosition(centerView)
                     categoryPosition = pos
-                    Log.e("Snapped Item: ", "pos: $pos")
+                    changeCategoryPosition()
                 }
             }
         })
@@ -256,6 +272,9 @@ class CameraActivity : AppCompatActivity () {
             list = pictureList.toCollection(ArrayList())
             mAdapter = CategoryAdapter(this, list)
             mRecyclerView.adapter = mAdapter
+
+            mRecyclerView.smoothScrollToPosition(categoryPosition)
+            changeCategoryPosition()
 
             mObject = pictureList.first()
         }
@@ -290,15 +309,8 @@ class CameraActivity : AppCompatActivity () {
                     }
                 }
             }
-            super.onTouchEvent(event)
+            false
         }
-
-        val sdcard: String = Environment.getExternalStorageState()
-        val f = when (sdcard != Environment.MEDIA_MOUNTED) {
-            true -> Environment.getRootDirectory()
-            false -> getExternalFilesDir(Environment.DIRECTORY_DCIM)
-        }
-        FILE_PATH = f!!.absolutePath + "/$APP_NAME/"
 
         imgBackground = findViewById(R.id.imgBack)
 
@@ -492,21 +504,11 @@ class CameraActivity : AppCompatActivity () {
      * This a callback object for the [ImageReader]. "onImageAvailable" will be called when a
      * still image is ready to be saved.
      */
-    @SuppressLint("SimpleDateFormat")
     private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
-        val sdf = SimpleDateFormat("yyMMddhhmmss")
-        val currentDate = sdf.format(Date())
-
-        val dir = File(FILE_PATH + list[categoryPosition].title)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-        val file = File(dir, mObject.title + "_$currentDate.jpg")
-
         backgroundHandler?.post(
             ImageSaver(
                 it.acquireNextImage(),
-                file,
+                list[categoryPosition].title,
                 this,
                 findViewById(R.id.imgRecent),
                 CameraCharacteristics.LENS_FACING_FRONT
@@ -612,7 +614,6 @@ class CameraActivity : AppCompatActivity () {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     override fun onResume() {
         super.onResume()
         startBackgroundThread()
@@ -1073,8 +1074,6 @@ class CameraActivity : AppCompatActivity () {
          * Tag for the [Log].
          */
         private const val TAG = "CameraActivity"
-
-        private lateinit var FILE_PATH: String
 
         private lateinit var mObject: LastPicture
 
