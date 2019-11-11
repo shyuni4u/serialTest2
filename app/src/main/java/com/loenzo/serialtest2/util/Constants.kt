@@ -211,3 +211,18 @@ fun autoRotateFile(filePath: String): Bitmap {
         origin.scale(1280, 720, false)
     }
 }
+
+fun getRealPathFromURI(context: Context, contentUri: Uri): String? {
+    var result: String? = null
+    val cursor = context.contentResolver.query(contentUri, null, null, null, null)
+    if (cursor == null) {
+        result = contentUri.path
+    } else {
+        cursor.moveToFirst()
+        val idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
+        result = cursor.getString(idx)
+        cursor.close()
+    }
+
+    return result
+}
