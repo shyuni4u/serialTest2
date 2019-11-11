@@ -80,7 +80,7 @@ internal class ImageSaver(
                 }
             }
         }
-         */
+        */
 
         val values = ContentValues().apply {
             //put(MediaStore.Images.Media.TITLE, file.name)
@@ -88,7 +88,7 @@ internal class ImageSaver(
             put(MediaStore.Images.Media.DESCRIPTION, APP_NAME + "_$title")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.IS_PENDING, 1)
-            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM")
+            //put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM")
             //put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis())
             //put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
         }
