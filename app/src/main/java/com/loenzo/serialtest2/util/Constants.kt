@@ -1,55 +1,17 @@
-/*
- * Copyright 2017 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-@file:JvmName("Constants")
-@file:Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-
 package com.loenzo.serialtest2.util
 
 import android.annotation.SuppressLint
-import android.app.*
-import android.content.BroadcastReceiver
-import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.graphics.drawable.BitmapDrawable
-import android.media.ExifInterface
-import android.media.Image
-import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
-import android.util.Log
-import android.widget.Toast
-import androidx.core.app.NotificationCompat
 import androidx.core.graphics.scale
-import com.loenzo.serialtest2.MainActivity
-import com.loenzo.serialtest2.R
-import com.loenzo.serialtest2.camera.ImageSaver
+import androidx.exifinterface.media.ExifInterface
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.IOException
 import kotlin.collections.ArrayList
 
 const val APP_NAME = "OverCam"
@@ -64,6 +26,12 @@ const val CLOSE_INTERVAL_TIME = 1000 * 2
 const val MAIN_STATE = 0
 const val CATEGORY_STATE = 1
 const val ALPHA_STATE = 2
+const val EXPORT_STATE = 3
+
+// Plaid state
+const val PLAID_NONE_STATE = 0
+const val PLAID_THREE_STATE = 1
+const val PLAID_NINE_STATE = 2
 
 // Minimum swipe distance
 const val MIN_DISTANCE = 150
@@ -73,6 +41,8 @@ const val APPLICATION_SUCCESS = 9999
 const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1001
 const val SELECT_MEDIA_SUCCESS = 1002
+
+enum class FileType { JPEG, GIF, MP4 }
 
 /**
  * return file name
@@ -84,53 +54,20 @@ fun getNameFromPath (path: String): String {
 }
 
 /**
- * setting folder & image
- * from argument title info
- */
-@SuppressLint("InlinedApi")
-fun getRecentFilePathFromCategoryName (paramName: String, context: Context): String? {
-    val sdcard: String = Environment.getExternalStorageState()
-    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-        true -> Environment.getRootDirectory()
-        false -> Environment.getExternalStorageDirectory()
-    }
-    rootDir = File(rootDir.absolutePath + "/$APP_NAME/$paramName/")
-    if (!rootDir.exists())  rootDir.mkdirs()
-
-    val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
-    val selectionArg = arrayOf(paramName)
-    val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
-    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC LIMIT 1"
-
-    val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
-    val returnPath = when (cursor!!.count == 0) {
-        true -> null
-        false -> {
-            cursor.moveToNext()
-            cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
-        }
-    }
-    cursor.close()
-    return returnPath
-}
-
-/**
  * get image path list
  * from argument title info
  */
 @SuppressLint("InlinedApi")
-fun getRecentFilePathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
-    val sdcard: String = Environment.getExternalStorageState()
-    var rootDir: File = when (sdcard != Environment.MEDIA_MOUNTED) {
-        true -> Environment.getRootDirectory()
-        false -> Environment.getExternalStorageDirectory()
+fun getRecentFilePathListFromCategoryName (paramName: String, context: Context, fileType: FileType = FileType.JPEG): ArrayList<String> {
+    val env = when(fileType) {
+        FileType.JPEG -> Environment.DIRECTORY_DCIM
+        else -> Environment.DIRECTORY_PICTURES
     }
-    rootDir = File(rootDir.absolutePath + "/$APP_NAME/$paramName/")
-    if (!rootDir.exists())  rootDir.mkdirs()
+    val dir = File(Environment.getExternalStoragePublicDirectory(env).absolutePath + File.separator + APP_NAME)
+    if (!dir.exists())  dir.mkdirs()
 
-    val selection = "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME}=?"
-    val selectionArg = arrayOf(paramName)
+    val selection = "${MediaStore.Images.Media.DESCRIPTION}=?"
+    val selectionArg = arrayOf(APP_NAME + "_$paramName")
     val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
     val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
     val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC"
@@ -140,7 +77,12 @@ fun getRecentFilePathListFromCategoryName (paramName: String, context: Context):
     val returnArrayList = ArrayList<String>()
 
     while(cursor!!.moveToNext()) {
-        returnArrayList.add(cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA)))
+        val temp = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+        if (fileType == FileType.JPEG && temp.substring(temp.lastIndexOf(".") + 1) == "jpg") {
+            returnArrayList.add(temp)
+        } else {
+            returnArrayList.add(temp)
+        }
     }
     cursor.close()
     return returnArrayList
@@ -150,41 +92,20 @@ fun getRecentFilePathListFromCategoryName (paramName: String, context: Context):
  * remove directory tree
  * from argument path info
  */
-fun setDirectoryEmpty(directoryPath: String) {
-    val dir = File(directoryPath)
-    val childFileList = dir.listFiles()
-
-    if (dir.exists()) {
-        if (childFileList.isNotEmpty()) {
-            for (childFile in childFileList) {
-                if (!childFile.isDirectory) {
-                    childFile.delete()
-                }
-            }
+fun setRemoveImages(list: ArrayList<String>) {
+    for (path in list) {
+        val file = File(path)
+        if (file.exists()) {
+            file.delete()
         }
-        dir.delete()
     }
 }
 
 /**
  * rotate bitmap if some device
  */
-fun getRotateBitmap(bitmap: Bitmap, degree: Int, useScale: Boolean): Bitmap {
-    val maxSize = when (bitmap.width > bitmap.height) {
-        true -> bitmap.width
-        false -> bitmap.height
-    }
-    var degreeSize = when {
-        maxSize > 2000 -> 2
-        //maxSize > 1000 -> 2
-        else -> 1
-    }
-
-    if (useScale) {
-        degreeSize = 1
-    }
-
-    val scaledBitmap = bitmap.scale(bitmap.width / degreeSize, bitmap.height / degreeSize, true)
+fun getRotateBitmap(bitmap: Bitmap, degree: Int): Bitmap {
+    val scaledBitmap = bitmap.scale(bitmap.width, bitmap.height, true)
     if (degree == 0) return scaledBitmap
 
     val m = Matrix()
@@ -204,25 +125,11 @@ fun autoRotateFile(filePath: String): Bitmap {
         ExifInterface.ORIENTATION_ROTATE_90-> 90
         else -> 0
     }
-    val origin = getRotateBitmap(BitmapFactory.decodeFile(filePath), rotate, false)
+
+    val origin = getRotateBitmap(BitmapFactory.decodeFile(filePath), rotate)
     return if (rotate == 90 || rotate == 270) {
         origin.scale(720, 1280, false)
     } else {
         origin.scale(1280, 720, false)
     }
-}
-
-fun getRealPathFromURI(context: Context, contentUri: Uri): String? {
-    var result: String? = null
-    val cursor = context.contentResolver.query(contentUri, null, null, null, null)
-    if (cursor == null) {
-        result = contentUri.path
-    } else {
-        cursor.moveToFirst()
-        val idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
-        result = cursor.getString(idx)
-        cursor.close()
-    }
-
-    return result
 }

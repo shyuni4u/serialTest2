@@ -3,13 +3,14 @@ package com.loenzo.serialtest2.camera
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.*
 import android.hardware.camera2.*
 import android.media.ImageReader
+import android.net.Uri
 import android.os.*
-import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
@@ -23,16 +24,27 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.loenzo.serialtest2.*
 import com.loenzo.serialtest2.category.CategoryAdapter
+import com.loenzo.serialtest2.encoder.AnimatedGifEncoder
+import com.loenzo.serialtest2.encoder.ParamVideo
+import com.loenzo.serialtest2.gallery.GalleryActivity
 import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.*
+import org.jcodec.api.android.AndroidSequenceEncoder
+import org.jcodec.common.io.NIOUtils
+import org.jcodec.common.model.Rational
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.text.SimpleDateFormat
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -44,8 +56,137 @@ import kotlin.system.exitProcess
 
 class CameraActivity : AppCompatActivity () {
 
+    companion object {
+        var takingState = false
+
+        var prefsFlash = true
+        var prefsPlaid = PLAID_THREE_STATE
+        var prefsDirection = CameraCharacteristics.LENS_FACING_BACK
+        var prefsAlpha = 40
+
+        const val MOVIE = 1
+        const val GIF = 2
+
+        /**
+         * Conversion from screen rotation to JPEG orientation.
+         */
+        private val ORIENTATIONS = SparseIntArray()
+        //private val FRAGMENT_DIALOG = "dialog"
+
+        init {
+            ORIENTATIONS.append(Surface.ROTATION_0, 90)
+            ORIENTATIONS.append(Surface.ROTATION_90, 0)
+            ORIENTATIONS.append(Surface.ROTATION_180, 270)
+            ORIENTATIONS.append(Surface.ROTATION_270, 180)
+        }
+
+        /**
+         * Tag for the [Log].
+         */
+        private const val TAG = "CameraActivity"
+
+        private lateinit var mObject: LastPicture
+
+        /**
+         * Camera state: Showing camera preview.
+         */
+        private const val STATE_PREVIEW = 0
+
+        /**
+         * Camera state: Waiting for the focus to be locked.
+         */
+        private const val STATE_WAITING_LOCK = 1
+
+        /**
+         * Camera state: Waiting for the exposure to be precapture state.
+         */
+        private const val STATE_WAITING_PRECAPTURE = 2
+
+        /**
+         * Camera state: Waiting for the exposure state to be something other than precapture.
+         */
+        private const val STATE_WAITING_NON_PRECAPTURE = 3
+
+        /**
+         * Camera state: Picture was taken.
+         */
+        private const val STATE_PICTURE_TAKEN = 4
+
+        /**
+         * Max preview width that is guaranteed by Camera2 API
+         */
+        private const val MAX_PREVIEW_WIDTH = 1920
+
+        /**
+         * Max preview height that is guaranteed by Camera2 API
+         */
+        private const val MAX_PREVIEW_HEIGHT = 1080
+
+        private const val REQUEST_CAMERA_PERMISSION = 1
+
+        /**
+         * Given `choices` of `Size`s supported by a camera, choose the smallest one that
+         * is at least as large as the respective texture view size, and that is at most as large as
+         * the respective max size, and whose aspect ratio matches with the specified value. If such
+         * size doesn't exist, choose the largest one that is at most as large as the respective max
+         * size, and whose aspect ratio matches with the specified value.
+         *
+         * @param choices           The list of sizes that the camera supports for the intended
+         *                          output class
+         * @param textureViewWidth  The width of the texture view relative to sensor coordinate
+         * @param textureViewHeight The height of the texture view relative to sensor coordinate
+         * @param maxWidth          The maximum width that can be chosen
+         * @param maxHeight         The maximum height that can be chosen
+         * @param aspectRatio       The aspect ratio
+         * @return The optimal `Size`, or an arbitrary one if none were big enough
+         */
+        @JvmStatic private fun chooseOptimalSize(
+            choices: Array<Size>,
+            textureViewWidth: Int,
+            textureViewHeight: Int,
+            maxWidth: Int,
+            maxHeight: Int,
+            aspectRatio: Size
+        ): Size {
+
+            // Collect the supported resolutions that are at least as big as the preview Surface
+            val bigEnough = ArrayList<Size>()
+            // Collect the supported resolutions that are smaller than the preview Surface
+            val notBigEnough = ArrayList<Size>()
+            val w = aspectRatio.width
+            val h = aspectRatio.height
+            for (option in choices) {
+                if (option.width <= maxWidth && option.height <= maxHeight &&
+                    option.height == option.width * h / w) {
+                    if (option.width >= textureViewWidth && option.height >= textureViewHeight) {
+                        bigEnough.add(option)
+                    } else {
+                        notBigEnough.add(option)
+                    }
+                }
+            }
+
+            // Pick the smallest of those big enough. If there is no one big enough, pick the
+            // largest of those not big enough.
+            return when {
+                bigEnough.size > 0 -> Collections.min(bigEnough,
+                    CompareSizesByArea()
+                )
+                notBigEnough.size > 0 -> Collections.max(notBigEnough,
+                    CompareSizesByArea()
+                )
+                else -> {
+                    Log.e(TAG, "Couldn't find any suitable preview size")
+                    choices[0]
+                }
+            }
+        }
+    }
+
     private var pictureDb: LastPictureDB? = null
     private var pictureList = listOf<LastPicture>()
+
+    private lateinit var mainContext: Context
 
     private lateinit var list: ArrayList<LastPicture>
 
@@ -66,6 +207,7 @@ class CameraActivity : AppCompatActivity () {
             MAIN_STATE -> MainMenuFragment()
             CATEGORY_STATE -> CategoryMenuFragment()
             ALPHA_STATE -> AlphaMenuFragment()
+            EXPORT_STATE -> ExportMenuFragment()
             else -> MainMenuFragment()
         }
         val transaction = supportFragmentManager.beginTransaction()
@@ -107,7 +249,7 @@ class CameraActivity : AppCompatActivity () {
             daoThread {
                 var delItem: LastPicture? = null
                 for (item in pictureList) {
-                    if (item.title == list[categoryPosition].title) {
+                    if (item.title == getRecentName()) {
                         delItem = item
                     }
                 }
@@ -122,14 +264,8 @@ class CameraActivity : AppCompatActivity () {
                 }
             }
             if (isChecked) {
-                val sdcard: String = Environment.getExternalStorageState()
-                val rootDir: File? = when (sdcard != Environment.MEDIA_MOUNTED) {
-                    true -> Environment.getRootDirectory()
-                    false -> getExternalFilesDir(null)
-                }
-                if (rootDir != null) {
-                    setDirectoryEmpty(rootDir.absolutePath + "/$APP_NAME/${list[categoryPosition].title}")
-                }
+                val list = getRecentFilePathListFromCategoryName(getRecentName(), this)
+                setRemoveImages(list)
             }
         } else {
             Toast.makeText(this, resources.getString(R.string.warning_category), Toast.LENGTH_SHORT).show()
@@ -138,6 +274,38 @@ class CameraActivity : AppCompatActivity () {
 
     fun getRecentName(): String {
         return list[categoryPosition].title
+    }
+
+    fun refreshImages() {
+        val file = getRecentFilePathListFromCategoryName(getRecentName(), this)
+        val imgRecent = findViewById<ImageView>(R.id.imgRecent)
+        val imgBackground = findViewById<ImageView>(R.id.imgBack)
+        if (file.size > 0) {
+            Handler(Looper.getMainLooper()).post {
+                Glide.with(this)
+                    .load(file[0])
+                    .apply(RequestOptions().circleCrop())
+                    .thumbnail(0.1F)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(imgRecent)
+
+                Glide.with(this)
+                    .load(file[0])
+                    .thumbnail(0.1F)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(imgBackground)
+                imgBackground.alpha = 0.4F
+            }
+        } else {
+            Handler(Looper.getMainLooper()).post {
+                Glide.with(this)
+                    .clear(imgRecent)
+                Glide.with(this)
+                    .clear(imgBackground)
+            }
+        }
     }
 
     fun changeFlashSetting() {
@@ -166,21 +334,41 @@ class CameraActivity : AppCompatActivity () {
     fun changePlaidSetting() {
         val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
         prefsPlaid = when (prefsPlaid) {
-            true -> false
-            false -> true
+            PLAID_NONE_STATE -> PLAID_THREE_STATE
+            PLAID_THREE_STATE -> PLAID_NINE_STATE
+            PLAID_NINE_STATE -> PLAID_NONE_STATE
+            else -> PLAID_THREE_STATE
         }
-        prefs!!.edit().putBoolean("plaid", prefsPlaid).apply()
+        prefs!!.edit().putInt("plaid", prefsPlaid).apply()
         Handler(Looper.getMainLooper()).post {
-            if (prefsPlaid) {
-                imgPlaid.background = resources.getDrawable(R.drawable.plaid, null)
-            } else {
-                imgPlaid.background = null
+            imgPlaid.background = when (prefsPlaid) {
+                PLAID_THREE_STATE -> resources.getDrawable(R.drawable.plaid, null)
+                PLAID_NONE_STATE -> null
+                else -> resources.getDrawable(R.drawable.plaid_nine, null)
             }
         }
     }
 
+    fun getTransparentAlpha(): Int {
+        return prefsAlpha
+    }
+
+    fun setTransparentAlpha(value: Int) {
+        prefsAlpha = value
+        val imgBackground = findViewById<ImageView>(R.id.imgBack)
+        imgBackground.alpha = (value * 0.01).toFloat()
+
+        val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt("alpha", prefsAlpha).apply()
+    }
+
+    fun exportVideo(param: ParamVideo) {
+        AsyncMakeVideo().execute(param)
+    }
+
     private fun changeCategoryPosition(pos: Int = categoryPosition) {
-        Log.e("Snapped Item: ", "pos: $pos")
+        refreshImages()
+        Log.d("Snapped Item: ", "pos: $pos")
     }
 
     private fun getScreenWidth(): Int {
@@ -196,6 +384,120 @@ class CameraActivity : AppCompatActivity () {
         // convert dp to pixel
         // 100 = category_main.text_view_category.width = 100dp
         return (100 * resources.displayMetrics.density + 0.5F).toInt()
+    }
+
+    @SuppressLint("StaticFieldLeak")
+    inner class AsyncMakeVideo : AsyncTask<ParamVideo, Int, Int>() {
+        private val loading = TransparentLoadingDialog(mainContext)
+
+        private lateinit var strPath: String
+
+        override fun onPreExecute() {
+            loading.show()
+            super.onPreExecute()
+        }
+
+        override fun doInBackground(vararg params: ParamVideo?): Int {
+            var returnValue = -1
+            if (params[0] != null) {
+                val temp = params[0]!!
+                val data = getRecentFilePathListFromCategoryName(getRecentName(), mainContext)
+
+                val fps = when(temp.fps) {
+                    0 -> 8
+                    else -> temp.fps
+                }
+
+                if (data.size > 0) {
+                    if (temp.type == MOVIE) {
+                        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absolutePath + File.separator + APP_NAME)
+                        if (!dir.exists()) {
+                            dir.mkdirs()
+                        }
+
+                        var n = 1
+                        var file = File(dir, "${temp.name}.mp4")
+                        while(file.exists()) {
+                            file = File(dir, "${temp.name}($n).mp4")
+                            n++
+                        }
+                        strPath = file.absolutePath
+                        NIOUtils.writableFileChannel(strPath).use { fileChannel ->
+                            AndroidSequenceEncoder(
+                                fileChannel,
+                                Rational.R(fps, 1)
+                            ).let { encoder ->
+                                data.map {
+                                    val nProgress = 100 * data.indexOf(it) / data.size
+                                    publishProgress(nProgress)
+                                    encoder.encodeImage(
+                                        autoRotateFile(it)
+                                    )
+                                }
+                                encoder.finish()
+                                val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                                    this.data = Uri.fromFile(File(strPath))
+                                }
+                                mainContext.sendBroadcast(intent)
+                            }
+                        }
+                    } else if (temp.type == GIF) {
+                        val bos = ByteArrayOutputStream()
+                        val gifEncoder = AnimatedGifEncoder()
+                        gifEncoder.setDelay(fps / 1000)
+                        gifEncoder.setRepeat(0)
+                        gifEncoder.start(bos)
+
+                        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + File.separator + APP_NAME)
+                        if (!dir.exists()) {
+                            dir.mkdirs()
+                        }
+
+                        var n = 1
+                        var file = File(dir, "${temp.name}.gif")
+                        while(file.exists()) {
+                            file = File(dir, "${temp.name}($n).gif")
+                            n++
+                        }
+
+                        strPath = file.absolutePath
+
+                        for (img in data) {
+                            gifEncoder.addFrame(autoRotateFile(img))
+                            val nProgress = 100 * data.indexOf(img) / data.size
+                            publishProgress(nProgress)
+                        }
+                        gifEncoder.finish()
+                        try {
+                            FileOutputStream(strPath).also {
+                                it.write(bos.toByteArray())
+                            }
+                        } catch (e: IOException) {}
+                        val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                            this.data = Uri.fromFile(File(strPath))
+                        }
+                        mainContext.sendBroadcast(intent)
+                    }
+                    returnValue = temp.type
+                }
+            }
+            return returnValue
+        }
+
+        override fun onPostExecute(result: Int?) {
+            super.onPostExecute(result)
+            loading.dismiss()
+
+            if (result == -1) {
+                Toast.makeText(mainContext, "Data is not exist", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun onProgressUpdate(vararg values: Int?) {
+            super.onProgressUpdate(*values)
+            val strProgress = loading.findViewById<TextView>(R.id.textLoading)
+            strProgress.text = getString(R.string.loading_progress, values[0].toString())
+        }
     }
 
     inner class CustomLayoutManager(context: Context?, orientation: Int, reverseLayout: Boolean, private var parentWidth: Int, private var itemWidth: Int): LinearLayoutManager(context, orientation, reverseLayout) {
@@ -235,10 +537,16 @@ class CameraActivity : AppCompatActivity () {
         adView.loadAd(adRequest)
 
         changeMenuFragment(MAIN_STATE)
+        mainContext = this
 
         val prefs = getSharedPreferences(SHARED_NAME, Context.MODE_PRIVATE)
         prefsFlash = prefs!!.getBoolean("flash", true)
-        prefsPlaid = prefs.getBoolean("plaid", true)
+        prefsPlaid = prefs.getInt("plaid", PLAID_THREE_STATE)
+        prefsDirection = prefs.getInt("direction", CameraCharacteristics.LENS_FACING_BACK)
+        prefsAlpha = prefs.getInt("alpha", 40)
+
+        //prefs.edit().clear().apply()
+        //TransparentLoadingDialog(this).show()
 
         val snapHelper = LinearSnapHelper()
         val layoutManager = CustomLayoutManager(this, LinearLayoutManager.HORIZONTAL, false, getScreenWidth(), itemWidth())
@@ -287,6 +595,7 @@ class CameraActivity : AppCompatActivity () {
         textureView.setOnClickListener {
             if (menuState != MAIN_STATE) changeMenuFragment(MAIN_STATE)
         }
+
         /**
          * when swiping [textureView] then move position of [mRecyclerView]
          */
@@ -318,65 +627,36 @@ class CameraActivity : AppCompatActivity () {
          * setting [imgPlaid] background
          */
         imgPlaid = findViewById(R.id.imgPlaid)
-        if (prefsPlaid) {
-            imgPlaid.background = resources.getDrawable(R.drawable.plaid, null)
-        } else {
-            imgPlaid.background = null
-        }
-        //val barAlpha: SeekBar = this.findViewById(R.id.barAlpha)
-        //val imgRecent: ImageView = this.findViewById(R.id.imgRecent)
-        val btnCapture: Button = this.findViewById(R.id.btnCapture)
-        val btnChange: ImageButton = this.findViewById(R.id.btnChange)
-
-        /*
-        val recentFilePath = getRecentFilePathFromCategoryName(mObject.title, this)
-        if (recentFilePath == null) {
-            barAlpha.visibility = View.INVISIBLE
-            imgBackground.background = null
-        } else {
-            barAlpha.visibility = View.VISIBLE
-            Glide.with(this)
-                .load(recentFilePath)
-                .thumbnail(0.1F)
-                .into(imgBackground)
-            imgBackground.alpha = mObject.cameraAlpha
+        imgPlaid.background = when (prefsPlaid) {
+            PLAID_THREE_STATE -> resources.getDrawable(R.drawable.plaid, null)
+            PLAID_NONE_STATE -> null
+            else -> resources.getDrawable(R.drawable.plaid_nine, null)
         }
 
-        //barAlpha.progress = (mObject.cameraAlpha * 100).toInt()
-        barAlpha.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-            override fun onProgressChanged(seekBar: SeekBar?, i: Int, b: Boolean) {
-                imgBackground.alpha = (i * 0.01).toFloat()
-                //mObject.cameraAlpha = (i * 0.01).toFloat()
-            }
-        })
+        val imgRecent = findViewById<ImageView>(R.id.imgRecent)
+        val btnCapture = this.findViewById<Button>(R.id.btnCapture)
+        val btnChange = this.findViewById<ImageButton>(R.id.btnChange)
 
-        Glide.with(this)
-            .load(
-                getRecentFilePathFromCategoryName(
-                    mObject.title,
-                    this
-                )
-            )
-            .apply(RequestOptions().circleCrop())
-            .thumbnail(0.1F)
-            .into(imgRecent)
-        */
-
+        imgRecent.setOnClickListener {
+            val intent = Intent(this, GalleryActivity::class.java)
+            intent.putExtra("selected", getRecentName())
+            startActivity(intent)
+            imgRecent.isEnabled = false
+        }
         btnCapture.setOnClickListener {
-            lockFocus()
+            if (!takingState) {
+                takingState = true
+                lockFocus()
+            }
         }
-
         btnChange.setOnClickListener {
             closeCamera()
             if (textureView.isAvailable) {
-                /*
-                mObject.cameraDirection = when (mObject.cameraDirection == CameraCharacteristics.LENS_FACING_BACK) {
+                prefsDirection = when (prefsDirection == CameraCharacteristics.LENS_FACING_BACK) {
                     true -> CameraCharacteristics.LENS_FACING_FRONT
                     false -> CameraCharacteristics.LENS_FACING_BACK
                 }
-                 */
+                prefs.edit().putInt("direction", prefsDirection).apply()
                 openCamera(textureView.width, textureView.height)
             } else {
                 textureView.surfaceTextureListener = surfaceTextureListener
@@ -508,11 +788,9 @@ class CameraActivity : AppCompatActivity () {
         backgroundHandler?.post(
             ImageSaver(
                 it.acquireNextImage(),
-                list[categoryPosition].title,
+                getRecentName(),
                 this,
-                findViewById(R.id.imgRecent),
-                CameraCharacteristics.LENS_FACING_FRONT
-                //mObject.cameraDirection
+                prefsDirection
             )
         )
     }
@@ -617,6 +895,8 @@ class CameraActivity : AppCompatActivity () {
     override fun onResume() {
         super.onResume()
         startBackgroundThread()
+        val imgRecent = findViewById<ImageView>(R.id.imgRecent)
+        imgRecent.isEnabled = true
 
         // When the screen is turned off and turned back on, the SurfaceTexture is already
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
@@ -672,11 +952,9 @@ class CameraActivity : AppCompatActivity () {
 
                 // We don't use a front facing camera in this sample.
                 val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
-                /*
-                if (cameraDirection != null && cameraDirection != mObject.cameraDirection) {
+                if (cameraDirection != null && cameraDirection != prefsDirection) {
                     continue
                 }
-                 */
 
                 val map = characteristics.get(
                     CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
@@ -1050,126 +1328,6 @@ class CameraActivity : AppCompatActivity () {
             requestBuilder.set(
                 CaptureRequest.CONTROL_AE_MODE,
                 CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-        }
-    }
-
-    companion object {
-        var prefsFlash = true
-        var prefsPlaid = true
-
-        /**
-         * Conversion from screen rotation to JPEG orientation.
-         */
-        private val ORIENTATIONS = SparseIntArray()
-        //private val FRAGMENT_DIALOG = "dialog"
-
-        init {
-            ORIENTATIONS.append(Surface.ROTATION_0, 90)
-            ORIENTATIONS.append(Surface.ROTATION_90, 0)
-            ORIENTATIONS.append(Surface.ROTATION_180, 270)
-            ORIENTATIONS.append(Surface.ROTATION_270, 180)
-        }
-
-        /**
-         * Tag for the [Log].
-         */
-        private const val TAG = "CameraActivity"
-
-        private lateinit var mObject: LastPicture
-
-        /**
-         * Camera state: Showing camera preview.
-         */
-        private const val STATE_PREVIEW = 0
-
-        /**
-         * Camera state: Waiting for the focus to be locked.
-         */
-        private const val STATE_WAITING_LOCK = 1
-
-        /**
-         * Camera state: Waiting for the exposure to be precapture state.
-         */
-        private const val STATE_WAITING_PRECAPTURE = 2
-
-        /**
-         * Camera state: Waiting for the exposure state to be something other than precapture.
-         */
-        private const val STATE_WAITING_NON_PRECAPTURE = 3
-
-        /**
-         * Camera state: Picture was taken.
-         */
-        private const val STATE_PICTURE_TAKEN = 4
-
-        /**
-         * Max preview width that is guaranteed by Camera2 API
-         */
-        private const val MAX_PREVIEW_WIDTH = 1920
-
-        /**
-         * Max preview height that is guaranteed by Camera2 API
-         */
-        private const val MAX_PREVIEW_HEIGHT = 1080
-
-        private const val REQUEST_CAMERA_PERMISSION = 1
-
-        /**
-         * Given `choices` of `Size`s supported by a camera, choose the smallest one that
-         * is at least as large as the respective texture view size, and that is at most as large as
-         * the respective max size, and whose aspect ratio matches with the specified value. If such
-         * size doesn't exist, choose the largest one that is at most as large as the respective max
-         * size, and whose aspect ratio matches with the specified value.
-         *
-         * @param choices           The list of sizes that the camera supports for the intended
-         *                          output class
-         * @param textureViewWidth  The width of the texture view relative to sensor coordinate
-         * @param textureViewHeight The height of the texture view relative to sensor coordinate
-         * @param maxWidth          The maximum width that can be chosen
-         * @param maxHeight         The maximum height that can be chosen
-         * @param aspectRatio       The aspect ratio
-         * @return The optimal `Size`, or an arbitrary one if none were big enough
-         */
-        @JvmStatic private fun chooseOptimalSize(
-            choices: Array<Size>,
-            textureViewWidth: Int,
-            textureViewHeight: Int,
-            maxWidth: Int,
-            maxHeight: Int,
-            aspectRatio: Size
-        ): Size {
-
-            // Collect the supported resolutions that are at least as big as the preview Surface
-            val bigEnough = ArrayList<Size>()
-            // Collect the supported resolutions that are smaller than the preview Surface
-            val notBigEnough = ArrayList<Size>()
-            val w = aspectRatio.width
-            val h = aspectRatio.height
-            for (option in choices) {
-                if (option.width <= maxWidth && option.height <= maxHeight &&
-                    option.height == option.width * h / w) {
-                    if (option.width >= textureViewWidth && option.height >= textureViewHeight) {
-                        bigEnough.add(option)
-                    } else {
-                        notBigEnough.add(option)
-                    }
-                }
-            }
-
-            // Pick the smallest of those big enough. If there is no one big enough, pick the
-            // largest of those not big enough.
-            return when {
-                bigEnough.size > 0 -> Collections.min(bigEnough,
-                    CompareSizesByArea()
-                )
-                notBigEnough.size > 0 -> Collections.max(notBigEnough,
-                    CompareSizesByArea()
-                )
-                else -> {
-                    Log.e(TAG, "Couldn't find any suitable preview size")
-                    choices[0]
-                }
-            }
         }
     }
 }

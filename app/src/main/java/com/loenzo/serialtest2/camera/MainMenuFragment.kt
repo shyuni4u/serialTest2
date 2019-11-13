@@ -1,6 +1,5 @@
 package com.loenzo.serialtest2.camera
 
-import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -39,7 +38,7 @@ class MainMenuFragment : Fragment() {
         btnFlash.setOnClickListener {
             (context as CameraActivity).changeFlashSetting()
         }
-        val btnAlarm = view.findViewById<ImageButton>(R.id.btnAlarm)
+        //val btnAlarm = view.findViewById<ImageButton>(R.id.btnAlarm)
         val btnPlaid = view.findViewById<ImageButton>(R.id.btnPlaid)
         btnPlaid.setOnClickListener {
             (context as CameraActivity).changePlaidSetting()
@@ -47,6 +46,10 @@ class MainMenuFragment : Fragment() {
         val btnAlpha = view.findViewById<ImageButton>(R.id.btnAlpha)
         btnAlpha.setOnClickListener {
             (context as CameraActivity).changeMenuFragment(ALPHA_STATE)
+        }
+        val btnExport = view.findViewById<ImageButton>(R.id.btnExport)
+        btnExport.setOnClickListener {
+            (context as CameraActivity).changeMenuFragment(EXPORT_STATE)
         }
 
         return view

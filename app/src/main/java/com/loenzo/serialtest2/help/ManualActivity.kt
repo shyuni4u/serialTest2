@@ -29,7 +29,6 @@ import com.loenzo.serialtest2.util.SHARED_NAME
 import kotlin.system.exitProcess
 
 class ManualActivity : AppCompatActivity() {
-
     private var previousTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -131,6 +130,5 @@ class ManualActivity : AppCompatActivity() {
             }
         }
     }
-
 }
 

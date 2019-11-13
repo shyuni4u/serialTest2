@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.loenzo.serialtest2.R
 import com.loenzo.serialtest2.util.getNameFromPath
 
@@ -40,6 +41,8 @@ class GalleryDetail : AppCompatActivity() {
             Glide.with(context!!)
                 .load(url)
                 .thumbnail(0.1F)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
                 .into(imageView)
         }
     }

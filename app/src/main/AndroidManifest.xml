@@ -34,6 +34,7 @@
         <activity android:name=".gallery.GalleryActivity"/>
         <activity android:name=".gallery.GalleryDetail"/>
         <activity android:name=".help.ManualActivity"/>
+        <activity android:name=".encoder.EncodeGifActivity"/>
 
         <receiver android:name=".alarm.AlarmBroadcastReceiver"/>
 

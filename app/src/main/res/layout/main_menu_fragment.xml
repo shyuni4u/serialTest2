@@ -31,9 +31,10 @@
             android:background="@android:color/transparent"
             app:layout_constraintHorizontal_chainStyle="spread"
             app:layout_constraintStart_toEndOf="@+id/btnMenu"
-            app:layout_constraintEnd_toStartOf="@+id/btnAlarm"
+            app:layout_constraintEnd_toStartOf="@+id/btnPlaid"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
+    <!--
     <ImageButton
             android:id="@+id/btnAlarm"
             android:src="@drawable/alarm_off"
@@ -48,6 +49,7 @@
             app:layout_constraintEnd_toStartOf="@+id/btnPlaid"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
+    -->
     <ImageButton
             android:id="@+id/btnPlaid"
             android:src="@drawable/plaid_on"
@@ -58,7 +60,7 @@
             android:scaleType="centerCrop"
             android:background="@android:color/transparent"
             app:layout_constraintHorizontal_chainStyle="spread"
-            app:layout_constraintStart_toEndOf="@+id/btnAlarm"
+            app:layout_constraintStart_toEndOf="@+id/btnFlash"
             app:layout_constraintEnd_toStartOf="@+id/btnAlpha"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
@@ -73,6 +75,20 @@
             android:background="@android:color/transparent"
             app:layout_constraintHorizontal_chainStyle="spread"
             app:layout_constraintStart_toEndOf="@+id/btnPlaid"
+            app:layout_constraintEnd_toStartOf="@+id/btnExport"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    <ImageButton
+            android:id="@+id/btnExport"
+            android:src="@drawable/export"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="15dp"
+            android:contentDescription="@string/none"
+            android:scaleType="centerCrop"
+            android:background="@android:color/transparent"
+            app:layout_constraintHorizontal_chainStyle="spread"
+            app:layout_constraintStart_toEndOf="@+id/btnAlpha"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>

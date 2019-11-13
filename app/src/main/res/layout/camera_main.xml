@@ -76,7 +76,7 @@
                     app:layout_constraintEnd_toStartOf="@+id/btnCapture"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    android:contentDescription="@string/capture"/>
+                    android:contentDescription="@string/camera"/>
 
             <Button
                     android:id="@+id/btnCapture"

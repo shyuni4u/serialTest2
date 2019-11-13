@@ -52,9 +52,9 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
         Glide.with(context)
             .load(data[position])
             .thumbnail(0.3F)
-            .error(R.drawable.no_image)
             .override(200, 200)
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .skipMemoryCache(true)
             .into(holder.itemView.findViewById(R.id.imgGalleryItem))
 
         holder.itemView.setOnClickListener {
