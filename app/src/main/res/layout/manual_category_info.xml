@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/black">
 
     <TextView
             android:layout_width="wrap_content"
@@ -14,21 +15,119 @@
             android:text="@string/manual_title_3"/>
 
     <ImageView
-            android:id="@+id/image_manual_app_info"
-            android:layout_width="300dp"
-            android:layout_height="100dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:src="@drawable/bottom_menu_with_no"
+            android:background="@drawable/round_image_5dp"
             android:contentDescription="@string/none" />
 
-    <TextView
+    <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="50dp"
-            android:padding="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginStart="10dp"
-            android:textColor="@color/white"
-            android:text="@string/none"
-            android:drawableStart="@drawable/ruler"
-            android:drawablePadding="15dp"/>
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="20dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="10dp"
+                android:padding="5dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="@string/manual_category_info_string_1_no"
+                android:textColor="@android:color/holo_red_dark"
+                android:textStyle="bold"
+                android:background="@drawable/bg_round_text_red"/>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="10dp"
+                android:textColor="@color/white"
+                android:text="@string/manual_category_info_string_1"/>
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="20dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="10dp"
+                android:padding="5dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="@string/manual_category_info_string_2_no"
+                android:textColor="@android:color/holo_red_dark"
+                android:textStyle="bold"
+                android:background="@drawable/bg_round_text_red"/>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="10dp"
+                android:textColor="@color/white"
+                android:text="@string/manual_category_info_string_2"/>
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="20dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="10dp"
+                android:padding="5dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="@string/manual_category_info_string_3_no"
+                android:textColor="@android:color/holo_red_dark"
+                android:textStyle="bold"
+                android:background="@drawable/bg_round_text_red"/>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="10dp"
+                android:textColor="@color/white"
+                android:text="@string/manual_category_info_string_3"/>
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="20dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="10dp"
+                android:padding="5dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="@string/manual_category_info_string_4_no"
+                android:textColor="@android:color/holo_red_dark"
+                android:textStyle="bold"
+                android:background="@drawable/bg_round_text_red"/>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="10dp"
+                android:textColor="@color/white"
+                android:text="@string/manual_category_info_string_4"/>
+    </LinearLayout>
 
 </LinearLayout>

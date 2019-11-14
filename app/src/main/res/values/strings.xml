@@ -46,6 +46,21 @@
     <string name="manual_app_info_string_1">Take a photo(Before/After) like a pro</string>
     <string name="manual_app_info_string_2">Make your photos convert to gif/video</string>
 
+    <string name="manual_camera_info_string_1">Edit category (Add, Remove, Help)</string>
+    <string name="manual_camera_info_string_2">Flash On/Off</string>
+    <string name="manual_camera_info_string_3">Guide line On/Off</string>
+    <string name="manual_camera_info_string_4">Control transparency</string>
+    <string name="manual_camera_info_string_5">Export Gif/Video file</string>
+
+    <string name="manual_category_info_string_1_no">1</string>
+    <string name="manual_category_info_string_1">Swipe to change category</string>
+    <string name="manual_category_info_string_2_no">2</string>
+    <string name="manual_category_info_string_2">Open the gallery</string>
+    <string name="manual_category_info_string_3_no">3</string>
+    <string name="manual_category_info_string_3">Take a picture</string>
+    <string name="manual_category_info_string_4_no">4</string>
+    <string name="manual_category_info_string_4">Change camera direction</string>
+
     <string name="manual_first_info_string_1">What subject will you take pictures on?</string>
     <string name="manual_first_info_string_2">ex) Parenting, Plant, Work out</string>
     <string name="manual_first_info_string_3">Start</string>

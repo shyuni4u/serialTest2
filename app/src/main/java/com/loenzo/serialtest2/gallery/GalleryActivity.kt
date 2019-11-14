@@ -3,7 +3,6 @@ package com.loenzo.serialtest2.gallery
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,20 +17,14 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.tabs.TabLayout
-import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.R
-import com.loenzo.serialtest2.room.LastPictureDB
-import com.loenzo.serialtest2.util.daoThread
-import com.loenzo.serialtest2.util.getRecentFilePathListFromCategoryName
+import com.loenzo.serialtest2.util.*
 
 class GalleryActivity : AppCompatActivity() {
-    enum class GalleryState { CAMERA, GIF, VIDEO }
 
     private lateinit var selectedTitle: String
 
     private fun refreshViewPager() {
-        //Log.e("TEST", "refreshViewPager selectedTitle: $selectedTitle")
-
         val fragmentList = ArrayList<GalleryCameraFragment>()
         fragmentList.add(GalleryCameraFragment(GalleryState.CAMERA, selectedTitle))
         fragmentList.add(GalleryCameraFragment(GalleryState.GIF, selectedTitle))
@@ -115,22 +108,16 @@ class GalleryActivity : AppCompatActivity() {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
-            if (state == GalleryState.CAMERA) {
-                val files = getRecentFilePathListFromCategoryName(title, view.context)
-                val recyclerView = view.findViewById<RecyclerView>(R.id.imgList)
-                recyclerView.layoutManager = GridLayoutManager(view.context, 3)
-                recyclerView.setHasFixedSize(true)
-                val adapter = GalleryAdapter(view.context, files)
-                recyclerView.adapter = adapter
+            val files = when(state) {
+                GalleryState.CAMERA -> getRecentFilePathListFromCategoryName(title, view.context)
+                GalleryState.GIF -> getRecentGifPathListFromCategoryName(title, view.context)
+                else -> getRecentMoviePathListFromCategoryName(title, view.context)
             }
-            //adapter.notifyDataSetChanged()
-            /*
-            recyclerView.background = when (state) {
-                GalleryState.CAMERA -> resources.getDrawable(R.drawable.plaid_on)
-                GalleryState.GIF -> resources.getDrawable(R.drawable.alarm_off)
-                else -> resources.getDrawable(R.drawable.alarm_on)
-            }
-            */
+            val recyclerView = view.findViewById<RecyclerView>(R.id.imgList)
+            recyclerView.layoutManager = GridLayoutManager(view.context, 3)
+            recyclerView.setHasFixedSize(true)
+            val adapter = GalleryAdapter(view.context, files, state)
+            recyclerView.adapter = adapter
         }
     }
 }

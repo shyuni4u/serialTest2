@@ -42,7 +42,7 @@ const val PERMISSION_CODE = 1000
 const val CAMERA_ACTIVITY_SUCCESS = 1001
 const val SELECT_MEDIA_SUCCESS = 1002
 
-enum class FileType { JPEG, GIF, MP4 }
+enum class GalleryState { CAMERA, GIF, VIDEO }
 
 /**
  * return file name
@@ -58,12 +58,8 @@ fun getNameFromPath (path: String): String {
  * from argument title info
  */
 @SuppressLint("InlinedApi")
-fun getRecentFilePathListFromCategoryName (paramName: String, context: Context, fileType: FileType = FileType.JPEG): ArrayList<String> {
-    val env = when(fileType) {
-        FileType.JPEG -> Environment.DIRECTORY_DCIM
-        else -> Environment.DIRECTORY_PICTURES
-    }
-    val dir = File(Environment.getExternalStoragePublicDirectory(env).absolutePath + File.separator + APP_NAME)
+fun getRecentFilePathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
+    val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath + File.separator + APP_NAME)
     if (!dir.exists())  dir.mkdirs()
 
     val selection = "${MediaStore.Images.Media.DESCRIPTION}=?"
@@ -78,15 +74,67 @@ fun getRecentFilePathListFromCategoryName (paramName: String, context: Context, 
 
     while(cursor!!.moveToNext()) {
         val temp = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
-        if (fileType == FileType.JPEG && temp.substring(temp.lastIndexOf(".") + 1) == "jpg") {
-            returnArrayList.add(temp)
-        } else {
+        if (temp.substring(temp.lastIndexOf(".") + 1) == "jpg") {
             returnArrayList.add(temp)
         }
     }
     cursor.close()
     return returnArrayList
 }
+
+@SuppressLint("InlinedApi")
+fun getRecentGifPathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
+    val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + File.separator + APP_NAME)
+    if (!dir.exists())  dir.mkdirs()
+
+    val selection = "${MediaStore.Images.Media.DESCRIPTION}=?"
+    val selectionArg = arrayOf(APP_NAME + "_GIF_$paramName")
+    val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
+    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC"
+
+    val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
+
+    val returnArrayList = ArrayList<String>()
+
+    while(cursor!!.moveToNext()) {
+        val temp = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+        if (temp.substring(temp.lastIndexOf(".") + 1) == "gif") {
+            returnArrayList.add(temp)
+        }
+    }
+    cursor.close()
+    return returnArrayList
+}
+
+@SuppressLint("InlinedApi")
+fun getRecentMoviePathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
+    val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absolutePath + File.separator + APP_NAME)
+    if (!dir.exists())  dir.mkdirs()
+
+    val selection = "${MediaStore.Video.Media.DESCRIPTION}=?"
+    val selectionArg = arrayOf(APP_NAME + "_MOVIE_$paramName")
+    //val selection = "${MediaStore.Video.Media.BUCKET_DISPLAY_NAME}=?"
+    //val selectionArg = arrayOf(APP_NAME)
+    val uri: Uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    val select = listOf(MediaStore.Video.Media.BUCKET_DISPLAY_NAME, MediaStore.Video.Media.DATA)
+    val orderBy: String = MediaStore.Video.Media.DATE_TAKEN + " DESC"
+
+    val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
+
+    val returnArrayList = ArrayList<String>()
+
+    while(cursor!!.moveToNext()) {
+        val temp = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA))
+        if (temp.substring(temp.lastIndexOf(".") + 1) == "mp4") {
+            returnArrayList.add(temp)
+        }
+    }
+    cursor.close()
+    return returnArrayList
+}
+
+
 
 /**
  * remove directory tree

@@ -46,6 +46,21 @@
     <string name="manual_app_info_string_1">Before/After사진을 전문가처럼 찍어보세요</string>
     <string name="manual_app_info_string_2">사진들을 움짤/동영상으로 만들어보세요</string>
 
+    <string name="manual_camera_info_string_1">주제 편집 (추가, 삭제, 도움말)</string>
+    <string name="manual_camera_info_string_2">플래시 On/Off</string>
+    <string name="manual_camera_info_string_3">안내선 On/Off</string>
+    <string name="manual_camera_info_string_4">투명도 조절</string>
+    <string name="manual_camera_info_string_5">Gif/Video 파일변환</string>
+
+    <string name="manual_category_info_string_1_no">1</string>
+    <string name="manual_category_info_string_1">밀어서 주제를 변경</string>
+    <string name="manual_category_info_string_2_no">2</string>
+    <string name="manual_category_info_string_2">갤러리로 이동</string>
+    <string name="manual_category_info_string_3_no">3</string>
+    <string name="manual_category_info_string_3">사진 촬영</string>
+    <string name="manual_category_info_string_4_no">4</string>
+    <string name="manual_category_info_string_4">카메라 방향 전환</string>
+
     <string name="manual_first_info_string_1">어떤 주제의 사진을 찍으실건가요?</string>
     <string name="manual_first_info_string_2">ex) 육아, 식물, 헬스</string>
     <string name="manual_first_info_string_3">시작하기</string>

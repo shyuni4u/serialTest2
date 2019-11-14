@@ -27,7 +27,7 @@ class ExportMenuFragment : Fragment() {
 
             val etName = EditText(context)
             etName.hint = context!!.resources.getString(R.string.file_name)
-            //etName.text = etName.text.append(item.title)
+            etName.text = etName.text.append((context as CameraActivity).getRecentName())
 
             val etFps = EditText(context)
             etFps.hint = context!!.resources.getString(R.string.fps)
@@ -62,6 +62,7 @@ class ExportMenuFragment : Fragment() {
 
             val etName = EditText(context)
             etName.hint = context!!.resources.getString(R.string.file_name)
+            etName.text = etName.text.append((context as CameraActivity).getRecentName())
 
             val etFps = EditText(context)
             etFps.hint = context!!.resources.getString(R.string.fps)

@@ -15,6 +15,7 @@ import androidx.viewpager.widget.ViewPager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.loenzo.serialtest2.R
+import com.loenzo.serialtest2.util.GalleryState
 import com.loenzo.serialtest2.util.getNameFromPath
 
 class GalleryDetail : AppCompatActivity() {
@@ -37,13 +38,24 @@ class GalleryDetail : AppCompatActivity() {
             super.onViewCreated(view, savedInstanceState)
             val imageView: ImageView = view.findViewById(R.id.imgGalleryDetail)
             val url = arguments!!.get("PARAM") as String
+            val state = arguments!!.get("STATE") as GalleryState
 
-            Glide.with(context!!)
-                .load(url)
-                .thumbnail(0.1F)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
-                .into(imageView)
+            if (state == GalleryState.CAMERA) {
+                Glide.with(context!!)
+                    .load(url)
+                    .thumbnail(0.1F)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(imageView)
+            } else if (state == GalleryState.GIF) {
+                Glide.with(context!!)
+                    .asGif()
+                    .load(url)
+                    .thumbnail(0.1F)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(imageView)
+            }
         }
     }
 
@@ -54,13 +66,14 @@ class GalleryDetail : AppCompatActivity() {
         val mToolbar:Toolbar = findViewById(R.id.toolbarDetail)
         setSupportActionBar(mToolbar)
 
-        val data = intent.getStringArrayListExtra("PARAM")
+        val data = intent.getStringArrayListExtra("PARAM")!!
         val pos = intent.getIntExtra("POSITION", 0)
+        val state = intent.getSerializableExtra("STATE") as GalleryState
         val list: ArrayList<PlaceholderFragment> = ArrayList()
 
         for (temp in data) {
             PlaceholderFragment().apply {
-                arguments = bundleOf("PARAM" to temp)
+                arguments = bundleOf("PARAM" to temp, "STATE" to state)
                 list.add(this)
             }
         }

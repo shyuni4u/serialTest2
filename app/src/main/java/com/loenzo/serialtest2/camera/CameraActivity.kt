@@ -2,6 +2,7 @@ package com.loenzo.serialtest2.camera
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +12,7 @@ import android.hardware.camera2.*
 import android.media.ImageReader
 import android.net.Uri
 import android.os.*
+import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
@@ -39,12 +41,10 @@ import com.loenzo.serialtest2.room.LastPicture
 import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.*
 import org.jcodec.api.android.AndroidSequenceEncoder
+import org.jcodec.common.io.FileChannelWrapper
 import org.jcodec.common.io.NIOUtils
 import org.jcodec.common.model.Rational
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -390,13 +390,12 @@ class CameraActivity : AppCompatActivity () {
     inner class AsyncMakeVideo : AsyncTask<ParamVideo, Int, Int>() {
         private val loading = TransparentLoadingDialog(mainContext)
 
-        private lateinit var strPath: String
-
         override fun onPreExecute() {
             loading.show()
             super.onPreExecute()
         }
 
+        @SuppressLint("InlinedApi")
         override fun doInBackground(vararg params: ParamVideo?): Int {
             var returnValue = -1
             if (params[0] != null) {
@@ -421,25 +420,38 @@ class CameraActivity : AppCompatActivity () {
                             file = File(dir, "${temp.name}($n).mp4")
                             n++
                         }
-                        strPath = file.absolutePath
-                        NIOUtils.writableFileChannel(strPath).use { fileChannel ->
-                            AndroidSequenceEncoder(
-                                fileChannel,
-                                Rational.R(fps, 1)
-                            ).let { encoder ->
-                                data.map {
-                                    val nProgress = 100 * data.indexOf(it) / data.size
-                                    publishProgress(nProgress)
-                                    encoder.encodeImage(
-                                        autoRotateFile(it)
-                                    )
+
+                        val values = ContentValues().apply {
+                            put(MediaStore.Video.Media.TITLE, file.name)
+                            put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
+                            put(MediaStore.Video.Media.DESCRIPTION, APP_NAME + "_MOVIE_${getRecentName()}")
+                            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                            //put(MediaStore.Video.Media.IS_PENDING, 1)
+                            put(MediaStore.Video.Media.DATA, file.absolutePath)
+                            //put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM")
+                            put(MediaStore.Video.Media.DATE_ADDED, System.currentTimeMillis())
+                            put(MediaStore.Video.Media.DATE_TAKEN, System.currentTimeMillis())
+                        }
+
+                        val url = mainContext.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+                        if (url != null) {
+                            val pdf = mainContext.contentResolver.openFileDescriptor(url, "w", null)
+                            if (pdf != null) {
+                                //NIOUtils.writableFileChannel(file.absolutePath).use { fileChannel ->
+                                FileChannelWrapper(FileOutputStream(pdf.fileDescriptor).channel).use { fileChannel ->
+                                    AndroidSequenceEncoder(fileChannel, Rational.R(fps, 1)).let { encoder ->
+                                        data.map {
+                                            val nProgress = 100 * data.indexOf(it) / data.size
+                                            publishProgress(nProgress)
+                                            encoder.encodeImage(autoRotateFile(it))
+                                        }
+                                        encoder.finish()
+                                    }
                                 }
-                                encoder.finish()
-                                val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
-                                    this.data = Uri.fromFile(File(strPath))
-                                }
-                                mainContext.sendBroadcast(intent)
+                                pdf.close()
                             }
+                            mainContext.contentResolver.update(url, values, null, null)
+                            values.clear()
                         }
                     } else if (temp.type == GIF) {
                         val bos = ByteArrayOutputStream()
@@ -460,23 +472,40 @@ class CameraActivity : AppCompatActivity () {
                             n++
                         }
 
-                        strPath = file.absolutePath
-
                         for (img in data) {
                             gifEncoder.addFrame(autoRotateFile(img))
                             val nProgress = 100 * data.indexOf(img) / data.size
                             publishProgress(nProgress)
                         }
                         gifEncoder.finish()
-                        try {
-                            FileOutputStream(strPath).also {
-                                it.write(bos.toByteArray())
-                            }
-                        } catch (e: IOException) {}
-                        val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
-                            this.data = Uri.fromFile(File(strPath))
+
+                        val values = ContentValues().apply {
+                            put(MediaStore.Images.Media.TITLE, file.name)
+                            put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
+                            put(MediaStore.Images.Media.DESCRIPTION, APP_NAME + "_GIF_${getRecentName()}")
+                            put(MediaStore.Images.Media.MIME_TYPE, "image/gif")
+                            //put(MediaStore.Images.Media.IS_PENDING, 1)
+                            put(MediaStore.Images.Media.DATA, file.absolutePath)
+                            //put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM")
+                            put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis())
+                            put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
                         }
-                        mainContext.sendBroadcast(intent)
+
+                        val url = mainContext.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                        if (url != null) {
+                            val pdf = mainContext.contentResolver.openFileDescriptor(url, "w", null)
+                            if (pdf != null) {
+                                val output = FileOutputStream(pdf.fileDescriptor)
+                                try {
+                                    output.write(bos.toByteArray())
+                                } finally {
+                                    output.close()
+                                    pdf.close()
+                                }
+                            }
+                            mainContext.contentResolver.update(url, values, null, null)
+                            values.clear()
+                        }
                     }
                     returnValue = temp.type
                 }

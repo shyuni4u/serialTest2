@@ -124,8 +124,8 @@ class ManualActivity : AppCompatActivity() {
                     val intent = Intent(view.context, CameraActivity::class.java)
                     startActivity(intent)
 
-                    //  close Room database
-                    LastPictureDB.destroyInstance()
+                    //  delete Room database
+                    //LastPictureDB.destroyInstance()
                 }
             }
         }

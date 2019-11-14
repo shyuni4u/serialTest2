@@ -11,9 +11,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.loenzo.serialtest2.R
+import com.loenzo.serialtest2.util.*
 import java.io.File
 
-class GalleryAdapter(private var context: Context, private var data: ArrayList<String>):
+class GalleryAdapter(private var context: Context, private var data: ArrayList<String>, private val state: GalleryState):
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     class ItemHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
@@ -49,23 +50,50 @@ class GalleryAdapter(private var context: Context, private var data: ArrayList<S
             }
         }
 
-        Glide.with(context)
-            .load(data[position])
-            .thumbnail(0.3F)
-            .override(200, 200)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .skipMemoryCache(true)
-            .into(holder.itemView.findViewById(R.id.imgGalleryItem))
+        when (state) {
+            GalleryState.CAMERA -> Glide.with(context)
+                .load(data[position])
+                .thumbnail(0.3F)
+                .override(200, 200)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(holder.itemView.findViewById(R.id.imgGalleryItem))
+            GalleryState.GIF -> Glide.with(context)
+                .asGif()
+                .load(data[position])
+                .thumbnail(0.3F)
+                .override(200, 200)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(holder.itemView.findViewById(R.id.imgGalleryItem))
+            else -> Glide.with(context)
+                .asBitmap()
+                .load(data[position])
+                .thumbnail(0.3F)
+                .override(200, 200)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(holder.itemView.findViewById(R.id.imgGalleryItem))
+        }
 
         holder.itemView.setOnClickListener {
+            val url = Uri.parse(data[holder.adapterPosition])
             if (actionmode) {
                 selectItem(data[holder.adapterPosition], it)
                 selectedView.add(it)
             } else {
-                val intent = Intent(context, GalleryDetail::class.java)
-                intent.putExtra("PARAM", data)
-                intent.putExtra("POSITION", holder.adapterPosition)
-                context.startActivity(intent)
+                if (state == GalleryState.CAMERA || state == GalleryState.GIF) {
+                    val intent = Intent(context, GalleryDetail::class.java)
+                    intent.putExtra("STATE", state)
+                    intent.putExtra("PARAM", data)
+                    intent.putExtra("POSITION", holder.adapterPosition)
+                    context.startActivity(intent)
+                } else {
+                    val intent = Intent(Intent.ACTION_VIEW, url).apply {
+                        setDataAndType(url, "video/mp4")
+                    }
+                    context.startActivity(intent)
+                }
             }
         }
 
