@@ -10,7 +10,6 @@ import android.content.res.Configuration
 import android.graphics.*
 import android.hardware.camera2.*
 import android.media.ImageReader
-import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
 import android.util.DisplayMetrics
@@ -42,7 +41,6 @@ import com.loenzo.serialtest2.room.LastPictureDB
 import com.loenzo.serialtest2.util.*
 import org.jcodec.api.android.AndroidSequenceEncoder
 import org.jcodec.common.io.FileChannelWrapper
-import org.jcodec.common.io.NIOUtils
 import org.jcodec.common.model.Rational
 import java.io.*
 import java.util.*
@@ -57,8 +55,6 @@ import kotlin.system.exitProcess
 class CameraActivity : AppCompatActivity () {
 
     companion object {
-        var takingState = false
-
         var prefsFlash = true
         var prefsPlaid = PLAID_THREE_STATE
         var prefsDirection = CameraCharacteristics.LENS_FACING_BACK
@@ -673,10 +669,7 @@ class CameraActivity : AppCompatActivity () {
             imgRecent.isEnabled = false
         }
         btnCapture.setOnClickListener {
-            if (!takingState) {
-                takingState = true
-                lockFocus()
-            }
+            lockFocus()
         }
         btnChange.setOnClickListener {
             closeCamera()

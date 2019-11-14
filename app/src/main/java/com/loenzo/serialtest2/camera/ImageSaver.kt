@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.hardware.camera2.CameraCharacteristics
-import android.media.ExifInterface
 import android.media.Image
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DCIM
@@ -16,6 +15,7 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.exifinterface.media.ExifInterface
 import com.loenzo.serialtest2.util.APP_NAME
 import com.loenzo.serialtest2.util.getRotateBitmap
 import java.io.File
@@ -34,9 +34,6 @@ internal class ImageSaver(
 
     private val title: String,
 
-    /**
-     * For sendBroadcast
-     */
     private val context: Context,
 
     private val cameraDirection: Int
@@ -52,12 +49,6 @@ internal class ImageSaver(
         val cr = context.contentResolver
 
         val dir = File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DCIM).absolutePath + File.separator + APP_NAME)
-        /*
-        if (dir == null) {
-            //dir = context.getExternalFilesDir(DIRECTORY_DCIM)
-            //dir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        }
-         */
         if (!dir.exists()) {
             dir.mkdirs()
         }
@@ -121,7 +112,6 @@ internal class ImageSaver(
                 }
 
                 (context as CameraActivity).refreshImages()
-                CameraActivity.takingState = false
 
                 Handler(Looper.getMainLooper()).post {
                     Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
