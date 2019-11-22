@@ -30,7 +30,7 @@ class ExportMenuFragment : Fragment() {
             etName.text = etName.text.append((context as CameraActivity).getRecentName())
 
             val etFps = EditText(context)
-            etFps.hint = context!!.resources.getString(R.string.fps)
+            etFps.hint = context!!.resources.getString(R.string.gif_fps)
             etFps.inputType = InputType.TYPE_CLASS_NUMBER
             //etFps.text = etFps.text.append("8")
 
@@ -71,17 +71,20 @@ class ExportMenuFragment : Fragment() {
             val lay = LinearLayout(context)
             lay.orientation = LinearLayout.VERTICAL
             lay.addView(etName)
-            lay.addView(etFps)
+            //lay.addView(etFps)
             builder.setView(lay)
 
             builder.setTitle(context!!.resources.getString(R.string.export_file))
             builder.setPositiveButton(context!!.resources.getString(R.string.apply)
             ) { _, _ -> run {
                 if (etName.text.toString() != "") {
+                    /*
                     val fps = when(etFps.text.toString()) {
                         "" -> 0
                         else -> Integer.parseInt(etFps.text.toString())
                     }
+                     */
+                    val fps = 8
                     (context as CameraActivity).exportVideo(ParamVideo(etName.text.toString(), fps, CameraActivity.MOVIE))
                 }
             } }

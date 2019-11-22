@@ -58,15 +58,19 @@ fun getNameFromPath (path: String): String {
  * from argument title info
  */
 @SuppressLint("InlinedApi")
-fun getRecentFilePathListFromCategoryName (paramName: String, context: Context): ArrayList<String> {
+fun getRecentFilePathListFromCategoryName (paramName: String, context: Context, useAsc: Boolean = false): ArrayList<String> {
     val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath + File.separator + APP_NAME)
+    val orderDirection = when(useAsc) {
+        true -> " ASC"
+        false -> "DESC"
+    }
     if (!dir.exists())  dir.mkdirs()
 
     val selection = "${MediaStore.Images.Media.DESCRIPTION}=?"
     val selectionArg = arrayOf(APP_NAME + "_$paramName")
     val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
     val select = listOf(MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.DATA)
-    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " DESC"
+    val orderBy: String = MediaStore.Images.Media.DATE_TAKEN + " $orderDirection"
 
     val cursor: Cursor? = context.contentResolver.query(uri, select.toTypedArray(), selection, selectionArg, orderBy)
 

@@ -396,12 +396,12 @@ class CameraActivity : AppCompatActivity () {
             var returnValue = -1
             if (params[0] != null) {
                 val temp = params[0]!!
-                val data = getRecentFilePathListFromCategoryName(getRecentName(), mainContext)
-
-                val fps = when(temp.fps) {
-                    0 -> 8
+                val data = getRecentFilePathListFromCategoryName(getRecentName(), mainContext, true)
+                val sec = when(temp.fps) {
+                    0 -> 5
                     else -> temp.fps
                 }
+                val fps = 1000 * 1 / (data.size / sec)
 
                 if (data.size > 0) {
                     if (temp.type == MOVIE) {
@@ -435,7 +435,7 @@ class CameraActivity : AppCompatActivity () {
                             if (pdf != null) {
                                 //NIOUtils.writableFileChannel(file.absolutePath).use { fileChannel ->
                                 FileChannelWrapper(FileOutputStream(pdf.fileDescriptor).channel).use { fileChannel ->
-                                    AndroidSequenceEncoder(fileChannel, Rational.R(fps, 1)).let { encoder ->
+                                    AndroidSequenceEncoder(fileChannel, Rational.R(sec, 1)).let { encoder ->
                                         data.map {
                                             val nProgress = 100 * data.indexOf(it) / data.size
                                             publishProgress(nProgress)
@@ -452,7 +452,7 @@ class CameraActivity : AppCompatActivity () {
                     } else if (temp.type == GIF) {
                         val bos = ByteArrayOutputStream()
                         val gifEncoder = AnimatedGifEncoder()
-                        gifEncoder.setDelay(fps / 1000)
+                        gifEncoder.setDelay(fps) //5 sec, 20 images, 4 images/sec
                         gifEncoder.setRepeat(0)
                         gifEncoder.start(bos)
 
