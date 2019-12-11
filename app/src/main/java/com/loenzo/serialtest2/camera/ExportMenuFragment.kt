@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import com.loenzo.serialtest2.R
 import com.loenzo.serialtest2.encoder.ParamVideo
+import com.loenzo.serialtest2.util.TransparentLoadingDialog
 
 class ExportMenuFragment : Fragment() {
     override fun onCreateView(
@@ -48,7 +49,7 @@ class ExportMenuFragment : Fragment() {
                         "" -> 0
                         else -> Integer.parseInt(etFps.text.toString())
                     }
-                    (context as CameraActivity).exportVideo(ParamVideo(etName.text.toString(), fps, CameraActivity.GIF))
+                    (context as CameraActivity).exportVideo(ParamVideo(etName.text.toString(), fps, CameraActivity.GIF, TransparentLoadingDialog(context!!)))
                 }
             } }
             builder.setNegativeButton(context!!.resources.getString(R.string.cancel)
@@ -85,7 +86,7 @@ class ExportMenuFragment : Fragment() {
                     }
                      */
                     val fps = 8
-                    (context as CameraActivity).exportVideo(ParamVideo(etName.text.toString(), fps, CameraActivity.MOVIE))
+                    (context as CameraActivity).exportVideo(ParamVideo(etName.text.toString(), fps, CameraActivity.MOVIE, TransparentLoadingDialog(context!!)))
                 }
             } }
             builder.setNegativeButton(context!!.resources.getString(R.string.cancel)

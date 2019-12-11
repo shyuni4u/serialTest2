@@ -384,10 +384,9 @@ class CameraActivity : AppCompatActivity () {
 
     @SuppressLint("StaticFieldLeak")
     inner class AsyncMakeVideo : AsyncTask<ParamVideo, Int, Int>() {
-        private val loading = TransparentLoadingDialog(mainContext)
+        private lateinit var loading: TransparentLoadingDialog
 
         override fun onPreExecute() {
-            loading.show()
             super.onPreExecute()
         }
 
@@ -396,14 +395,18 @@ class CameraActivity : AppCompatActivity () {
             var returnValue = -1
             if (params[0] != null) {
                 val temp = params[0]!!
+                loading = temp.dialog!!
                 val data = getRecentFilePathListFromCategoryName(getRecentName(), mainContext, true)
                 val sec = when(temp.fps) {
                     0 -> 5
                     else -> temp.fps
                 }
-                val fps = 1000 * 1 / (data.size / sec)
 
                 if (data.size > 0) {
+                    val fps: Int = (1000 * 1 / (data.size / sec).toFloat()).toInt()
+                    Handler(Looper.getMainLooper()).post {
+                        loading.show()
+                    }
                     if (temp.type == MOVIE) {
                         val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absolutePath + File.separator + APP_NAME)
                         if (!dir.exists()) {
@@ -453,7 +456,7 @@ class CameraActivity : AppCompatActivity () {
                         val bos = ByteArrayOutputStream()
                         val gifEncoder = AnimatedGifEncoder()
                         gifEncoder.setDelay(fps) //5 sec, 20 images, 4 images/sec
-                        gifEncoder.setRepeat(0)
+                        gifEncoder.setRepeat(-1)
                         gifEncoder.start(bos)
 
                         val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + File.separator + APP_NAME)
